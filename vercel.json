@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/canvas-proxy", "destination": "/api/canvas-proxy" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
