@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/ai-proxy", "destination": "/api/ai-proxy" },
+    { "source": "/api/canvas-proxy", "destination": "/api/canvas-proxy" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
