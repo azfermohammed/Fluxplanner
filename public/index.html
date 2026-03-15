@@ -18,10 +18,85 @@
 </div>
 
 <!-- ══ ONBOARDING ══ -->
-<div id="onboarding" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:800;align-items:center;justify-content:center;padding:24px">
-  <div style="background:var(--card);border:1px solid var(--border2);border-radius:24px;width:100%;max-width:420px;padding:32px 28px">
-    <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase">Flux Planner · Setup</div>
-    <div id="obWrap"></div>
+<div id="onboarding">
+  <div class="ob-card">
+    <div class="ob-logo">Flux Planner · Setup</div>
+    <div class="ob-progress" id="obProgress"></div>
+
+    <!-- Step 1: About You -->
+    <div class="ob-step active" id="ob-step-1">
+      <div class="ob-avatar" id="obAvatar" onclick="document.getElementById('obPicInput').click()">?
+        <input type="file" id="obPicInput" accept="image/*" style="display:none" onchange="handleObPic(event)">
+      </div>
+      <div class="ob-title">About you</div>
+      <div class="ob-sub">Tell Flux a bit about yourself so it can personalize your experience.</div>
+      <label class="ob-label">Your first name</label>
+      <input type="text" class="ob-input" id="obName" placeholder="e.g. Azfer" oninput="updateObPreview()">
+      <label class="ob-label" style="margin-top:16px">Grade</label>
+      <div class="ob-chips" id="gradeChips">
+        <button class="ob-chip" onclick="selectObChip(this,'obGrade','9')">9th</button>
+        <button class="ob-chip active" onclick="selectObChip(this,'obGrade','10')">10th</button>
+        <button class="ob-chip" onclick="selectObChip(this,'obGrade','11')">11th</button>
+        <button class="ob-chip" onclick="selectObChip(this,'obGrade','12')">12th</button>
+      </div>
+      <label class="ob-label" style="margin-top:16px">IB Track</label>
+      <div class="ob-chips" id="trackChips">
+        <button class="ob-chip active" onclick="selectObChip(this,'obTrack','Pre-IB / MYP')">Pre-IB / MYP</button>
+        <button class="ob-chip" onclick="selectObChip(this,'obTrack','IB Diploma')">IB Diploma</button>
+        <button class="ob-chip" onclick="selectObChip(this,'obTrack','Not IB')">Not IB</button>
+      </div>
+      <button class="ob-btn" onclick="obNext()">Continue →</button>
+    </div>
+
+    <!-- Step 2: School Info -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-title">Your school</div>
+      <div class="ob-sub">Optional — you can fill these in later from the School tab.</div>
+      <label class="ob-label">School name</label>
+      <input type="text" class="ob-input" id="obSchool" placeholder="e.g. International Academy East">
+      <label class="ob-label">Counselor name</label>
+      <input type="text" class="ob-input" id="obCounselor" placeholder="e.g. Ms. Johnson">
+      <label class="ob-label">Locker number</label>
+      <input type="text" class="ob-input" id="obLocker" placeholder="e.g. 342">
+      <label class="ob-label">Locker combination</label>
+      <input type="text" class="ob-input" id="obCombo" placeholder="e.g. 14-32-07">
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn-sec" onclick="obBack()">← Back</button>
+        <button class="ob-btn" onclick="obNext()">Continue →</button>
+      </div>
+      <div class="ob-skip" onclick="obNext()">Skip for now</div>
+    </div>
+
+    <!-- Step 3: Schedule -->
+    <div class="ob-step" id="ob-step-3">
+      <div class="ob-title">Your schedule</div>
+      <div class="ob-sub">Upload a photo and Flux AI will read it automatically using Gemini Vision.</div>
+      <label class="ob-upload-zone" id="obUploadZone" onclick="document.getElementById('obScheduleFile').click()">
+        <div class="ob-upload-icon">📷</div>
+        <div class="ob-upload-title">Tap to upload schedule</div>
+        <div class="ob-upload-hint">StudentConnect screenshot · printed schedule · photo</div>
+        <input type="file" id="obScheduleFile" accept="image/*" style="display:none" onchange="handleScheduleImg(event)">
+      </label>
+      <img class="ob-img-preview" id="obImgPreview" alt="Schedule preview">
+      <div class="ob-analyzing" id="obAnalyzing">
+        <div class="ai-think" style="padding:0"><span></span><span></span><span></span></div>
+        <span>Gemini is reading your schedule...</span>
+      </div>
+      <div class="ob-ai-result" id="obExtractedClasses"></div>
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn-sec" onclick="obBack()">← Back</button>
+        <button class="ob-btn" onclick="obNext()">Continue →</button>
+      </div>
+      <div class="ob-skip" onclick="obNext()">Skip for now</div>
+    </div>
+
+    <!-- Step 4: Done -->
+    <div class="ob-step" id="ob-step-4">
+      <div class="ob-done-emoji">🎉</div>
+      <div class="ob-done-title" id="obDoneTitle">You're all set!</div>
+      <div class="ob-done-sub">Your planner is ready. Everything syncs automatically to your Google account across all your devices.</div>
+      <button class="ob-btn" onclick="obFinish()">Open Flux →</button>
+    </div>
   </div>
 </div>
 
