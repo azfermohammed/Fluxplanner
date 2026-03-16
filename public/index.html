@@ -267,6 +267,7 @@
         <button class="nav-item" onclick="nav('goals',this)" data-tab="goals"><span class="ni">🎯</span><span class="nl">Goals</span></button>
         <button class="nav-item" onclick="nav('habits',this)" data-tab="habits"><span class="ni">🔥</span><span class="nl">Habits</span></button>
         <button class="nav-item" onclick="nav('mood',this)" data-tab="mood"><span class="ni">😊</span><span class="nl">Mood</span></button>
+        <button class="nav-item" onclick="nav('gmail',this)" data-tab="gmail"><span class="ni">📧</span><span class="nl">Gmail</span></button>
         <button class="nav-item" onclick="nav('settings',this)" data-tab="settings"><span class="ni">⚙</span><span class="nl">Settings</span></button>
       </div>
     </div>
@@ -308,6 +309,7 @@
         <button class="nav-item" onclick="navMob('goals')"><span class="ni">🎯</span><span class="nl">Goals</span></button>
         <button class="nav-item" onclick="navMob('habits')"><span class="ni">🔥</span><span class="nl">Habits</span></button>
         <button class="nav-item" onclick="navMob('mood')"><span class="ni">😊</span><span class="nl">Mood</span></button>
+        <button class="nav-item" onclick="navMob('gmail')"><span class="ni">📧</span><span class="nl">Gmail</span></button>
         <button class="nav-item" onclick="navMob('settings')"><span class="ni">⚙</span><span class="nl">Settings</span></button>
       </div>
     </div>
@@ -475,6 +477,17 @@
           <input type="text" id="classRoom" placeholder="e.g. Room 204, A-day only" style="margin-bottom:0">
         </div>
       </div>
+      <!-- Photo import for schedule -->
+      <div class="card">
+        <h3>📷 Import Schedule from Photo</h3>
+        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:10px">Upload a screenshot of your schedule — Gemini AI will read it automatically.</div>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--card2)">
+          <span style="font-size:1.5rem">📷</span>
+          <div><div style="font-size:.85rem;font-weight:600">Upload schedule photo</div><div style="font-size:.72rem;color:var(--muted)">StudentConnect screenshot · printed schedule</div></div>
+          <input type="file" accept="image/*" style="display:none" onchange="importScheduleFromPhoto(event,'schoolImgResult')">
+        </label>
+        <div id="schoolImgResult" style="display:none;margin-top:10px"></div>
+      </div>
       <!-- Teacher quirk notes -->
       <div class="card">
         <h3>Teacher Notes (Private)</h3>
@@ -489,6 +502,16 @@
 
     <!-- ─── GRADES ─── -->
     <div id="grades" class="panel">
+      <div class="card">
+        <h3>📷 Import from Photo</h3>
+        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:12px">Upload a screenshot of your grades or report card — AI will read it automatically.</div>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--card2);transition:border-color .2s" id="gradesImgLabel">
+          <span style="font-size:1.5rem">📷</span>
+          <div><div style="font-size:.85rem;font-weight:600">Upload grades screenshot</div><div style="font-size:.72rem;color:var(--muted)">StudentConnect, report card, gradebook</div></div>
+          <input type="file" accept="image/*" id="gradesImgInput" style="display:none" onchange="importGradesFromPhoto(event)">
+        </label>
+        <div id="gradesImportResult" style="display:none;margin-top:10px"></div>
+      </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
           <div><h3 style="margin:0 0 2px">Grades</h3><div style="font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace">4-decimal GPA</div></div>
@@ -560,6 +583,7 @@
           <button onclick="deleteNote()" class="btn-sec" style="padding:6px 10px;font-size:.78rem;color:var(--red)">Delete</button>
           <button onclick="generateFlashcardsFromNote()" style="padding:6px 12px;font-size:.78rem;background:rgba(var(--accent-rgb),.2);border:1px solid rgba(var(--accent-rgb),.4);color:var(--accent)">🃏 Flashcards</button>
           <button onclick="summarizeNoteWithAI()" style="padding:6px 12px;font-size:.78rem;background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.3);color:var(--purple)">✦ Summarize</button>
+          <label style="padding:6px 10px;font-size:.78rem;border-radius:8px;background:rgba(var(--accent-rgb),.1);border:1px solid rgba(var(--accent-rgb),.25);color:var(--accent);cursor:pointer">📷 Import<input type="file" accept="image/*" style="display:none" onchange="importNoteFromPhoto(event)"></label>
         </div>
         <div class="rtbar">
           <button class="rtbtn" onclick="fmt('bold')"><b>B</b></button>
@@ -700,6 +724,22 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="profileStats"></div>
       </div>
       <div class="card"><h3>Earned Badges</h3><div id="badgesDisplay"></div></div>
+
+      <!-- Canvas Connect -->
+      <div class="card">
+        <h3>Canvas LMS</h3>
+        <div id="canvasStatus" style="margin-bottom:12px"></div>
+        <label style="font-size:.72rem;color:var(--muted)">Canvas URL</label>
+        <input type="text" id="canvasUrl" placeholder="e.g. https://school.instructure.com" style="margin-bottom:8px">
+        <label style="font-size:.72rem;color:var(--muted)">Access Token</label>
+        <input type="password" id="canvasToken" placeholder="Paste your Canvas token" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px">
+          <button onclick="saveCanvasConfig()" class="btn-sec" style="flex:1">Save</button>
+          <button onclick="syncCanvas()" style="flex:1">↓ Sync Assignments</button>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:8px;font-family:'JetBrains Mono',monospace">Account → Settings → Approved Integrations → New Access Token</div>
+      </div>
+
     </div>
 
     <!-- ─── GOALS ─── -->
@@ -780,6 +820,21 @@
           <button onclick="startBreathing()" id="breathBtn" style="padding:8px 24px">Start</button>
         </div>
       </div>
+    </div>
+
+
+    <!-- ─── GMAIL ─── -->
+    <div id="gmail" class="panel">
+      <div class="card" style="padding:14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-weight:800;font-size:1rem">📧 Gmail</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">View school emails · Add to tasks</div>
+          </div>
+          <button onclick="loadGmail()" class="btn-sec" style="padding:7px 14px;font-size:.78rem">↻ Refresh</button>
+        </div>
+      </div>
+      <div id="gmailList"></div>
     </div>
 
     <!-- ─── AI ─── -->
@@ -921,6 +976,7 @@
     <button class="bnav-item" onclick="nav('calendar',this)" data-tab="calendar"><span class="bni">📅</span>Calendar</button>
     <button class="bnav-item" onclick="nav('school',this)" data-tab="school"><span class="bni">🏫</span>School</button>
     <button class="bnav-item" onclick="nav('ai',this)" data-tab="ai"><span class="bni">✦</span>AI</button>
+    <button class="bnav-item" onclick="nav('gmail',this)" data-tab="gmail"><span class="bni">📧</span>Gmail</button>
     <button class="bnav-item" onclick="openDrawer()" id="moreBtn"><span class="bni">☰</span>More</button>
   </div>
 
