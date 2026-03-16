@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Flux Planner</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="public/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.321.0/dist/umd/lucide.min.js"></script>
@@ -23,22 +23,17 @@
                 <span class="logo-text">FLUX</span>
                 <button id="sidebar-toggle" class="icon-btn"><i data-lucide="chevron-left"></i></button>
             </div>
-            
             <div class="nav-group">
                 <p class="nav-label">Main</p>
                 <button class="nav-item active" data-tab="dashboard"><i data-lucide="layout-dashboard"></i> <span>Dashboard</span></button>
                 <button class="nav-item" data-tab="calendar"><i data-lucide="calendar"></i> <span>Calendar</span></button>
                 <button class="nav-item" data-tab="ai"><i data-lucide="sparkles"></i> <span>Flux AI</span></button>
             </div>
-
             <div class="nav-group">
                 <p class="nav-label">School</p>
                 <button class="nav-item" data-tab="school-info"><i data-lucide="school"></i> <span>School Info</span></button>
                 <button class="nav-item" data-tab="grades"><i data-lucide="graduation-cap"></i> <span>Grades</span></button>
-                <button class="nav-item" data-tab="notes"><i data-lucide="sticky-note"></i> <span>Notes</span></button>
-                <button class="nav-item" data-tab="timer"><i data-lucide="timer"></i> <span>Focus Timer</span></button>
             </div>
-
             <div class="nav-group">
                 <p class="nav-label">Personal</p>
                 <button class="nav-item" data-tab="profile"><i data-lucide="user"></i> <span>Profile</span></button>
@@ -51,7 +46,7 @@
                 <div class="topbar-left"><h2 id="current-tab-title">Dashboard</h2></div>
                 <div class="topbar-right">
                     <div id="sync-status" class="status-pill"><i data-lucide="cloud-check"></i> Saved</div>
-                    <div id="user-menu" class="user-pill">
+                    <button id="user-menu" class="user-pill">
                         <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Flux" alt="avatar">
                         <span id="user-name-display">Student</span>
                     </button>
@@ -64,7 +59,7 @@
     <div id="auth-overlay" class="modal-overlay" style="display: none;">
         <div class="auth-card">
             <h2>Welcome to Flux</h2>
-            <p>Your personalized academic command center.</p>
+            <p>Your privacy-first academic planner.</p>
             <button id="google-login-btn" class="primary-btn"><img src="https://www.google.com/favicon.ico" width="16"> Continue with Google</button>
         </div>
     </div>
