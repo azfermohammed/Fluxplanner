@@ -4,7 +4,7 @@
 const SUBJECTS={LIT:{name:'Am. Lit',short:'LIT',color:'#6366f1'},AME:{name:'Am. Studies',short:'AME',color:'#f43f5e'},PP:{name:'Personal Project',short:'PP',color:'#10d9a0'},CHE:{name:'Chemistry',short:'CHE',color:'#fbbf24'},FRE:{name:'French',short:'FRE',color:'#3b82f6'},ORC:{name:'Orchestra',short:'ORC',color:'#c084fc'},PHY:{name:'Physics',short:'PHY',color:'#fb923c'},MTH:{name:'Math 3',short:'MTH',color:'#e879f9'},GYM:{name:'Gym',short:'GYM',color:'#10d9a0'}};
 const noHomeworkDays=["2025-09-01","2025-09-26","2025-09-27","2025-09-28","2025-10-17","2025-10-18","2025-10-19","2025-11-05","2025-11-26","2025-11-27","2025-11-28","2025-11-29","2025-12-20","2025-12-21","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-27","2025-12-28","2025-12-29","2025-12-30","2025-12-31","2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026-01-19","2026-02-13","2026-02-14","2026-02-15","2026-02-16","2026-02-17","2026-03-27","2026-03-28","2026-03-29","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-05-25","2026-05-26","2026-05-27"];
 const AFFIRMATIONS=["You are capable of amazing things.","Every expert was once a beginner.","Progress, not perfection.","Hard work compounds. Keep going.","Your future self is grateful for today's effort.","Difficult roads lead to beautiful destinations.","You've got this, one step at a time.","Consistency beats intensity. Show up today.","Your potential is limitless.","Rest is part of the process too."];
-const PANEL_TITLES={dashboard:'Dashboard',calendar:'Calendar',school:'School Info',grades:'Grades',notes:'Notes',timer:'Focus Timer',profile:'Profile',goals:'Goals',habits:'Habits',mood:'Mood',ai:'Flux AI',settings:'Settings'};
+const PANEL_TITLES={dashboard:'Dashboard',calendar:'Calendar',school:'School Info',grades:'Grades',notes:'Notes',timer:'Focus Timer',profile:'Profile',goals:'Goals',habits:'Habits',mood:'Mood',ai:'Flux AI',gmail:'Gmail',settings:'Settings'};
 
 function buildABMap(){const m={};let t=true;for(let d=new Date('2025-08-25');d<=new Date('2026-06-12');d.setDate(d.getDate()+1)){const dw=d.getDay();if(dw===0||dw===6)continue;m[d.toISOString().slice(0,10)]=t?'A':'B';t=!t;}return m;}
 const AB_MAP=buildABMap();
@@ -39,9 +39,12 @@ let currentNoteId=null,noteFilter='all',flashcards=[],fcIndex=0,fcFlipped=false;
 let ambientCtx=null,breathingActive=false,breathTimer=null;
 let sidebarCollapsed=load('flux_sidebar_collapsed',false);
 
-// ══ SUPABASE ══
+// ══ SUPABASE + API ══
 const SB_URL='https://lfigdijuqmbensebnevo.supabase.co';
 const SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmaWdkaWp1cW1iZW5zZWJuZXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjEzMDgsImV4cCI6MjA4ODkzNzMwOH0.qG1d9DLKrs0qqLgAp-6UGdaU7xWvlg2sWq-oD-y2kVo';
+// All AI calls go to Supabase Edge Functions - no separate backend needed
+const API={ai:`${SB_URL}/functions/v1/ai-proxy`,gemini:`${SB_URL}/functions/v1/gemini-proxy`,canvas:`${SB_URL}/functions/v1/canvas-proxy`};
+const API_HEADERS={'Content-Type':'application/json','Authorization':`Bearer ${SB_ANON}`};
 let _sb=null,currentUser=null;
 function getSB(){if(!_sb&&window.supabase?.createClient)_sb=window.supabase.createClient(SB_URL,SB_ANON);return _sb;}
 
@@ -201,8 +204,8 @@ function fmt(cmd){document.execCommand(cmd,false,null);}
 function insHeading(){document.execCommand('formatBlock',false,'<h3>');}
 function insBullet(){document.execCommand('insertUnorderedList',false,null);}
 function insCode(){document.execCommand('insertHTML',false,'<code style="background:var(--border);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:.82em">code</code>');}
-async function summarizeNoteWithAI(){const body=strip(document.getElementById('noteEditor').innerHTML);if(!body.trim())return;const resEl=document.getElementById('aiNoteResult');resEl.style.display='block';resEl.innerHTML='<div class="ai-bub bot"><div class="ai-think"><span></span><span></span><span></span></div></div>';try{const res=await fetch('/api/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'Summarize the following student note concisely in bullet points.',messages:[{role:'user',content:body}]})});const data=await res.json();resEl.innerHTML=`<div class="ai-bub bot" style="max-width:100%">${fmtAI(data.content?.[0]?.text||'Could not summarize.')}</div>`;}catch(e){resEl.innerHTML=`<div style="color:var(--red);font-size:.82rem">${e.message}</div>`;}}
-async function generateFlashcardsFromNote(){const body=strip(document.getElementById('noteEditor').innerHTML);if(!body.trim())return;const resEl=document.getElementById('aiNoteResult');resEl.style.display='block';resEl.innerHTML='<div style="color:var(--muted2);font-size:.82rem">Generating flashcards...</div>';try{const res=await fetch('/api/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'Generate 8-12 flashcards from these notes. Respond ONLY with a JSON array of {"q":"question","a":"answer"} objects.',messages:[{role:'user',content:body}]})});const data=await res.json();let txt=(data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim();const cards=JSON.parse(txt);if(currentNoteId){const n=notes.find(x=>x.id===currentNoteId);if(n){n.flashcards=cards;save('flux_notes',notes);}}flashcards=cards;fcIndex=0;fcFlipped=false;resEl.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Generated ${cards.length} flashcards!</div>`;openFlashcards();}catch(e){resEl.innerHTML=`<div style="color:var(--red);font-size:.82rem">Error generating flashcards.</div>`;}}
+async function summarizeNoteWithAI(){const body=strip(document.getElementById('noteEditor').innerHTML);if(!body.trim())return;const resEl=document.getElementById('aiNoteResult');resEl.style.display='block';resEl.innerHTML='<div class="ai-bub bot"><div class="ai-think"><span></span><span></span><span></span></div></div>';try{const res=await fetch(API.ai,{method:'POST',headers:API_HEADERS,body:JSON.stringify({system:'Summarize the following student note concisely in bullet points.',messages:[{role:'user',content:body}]})});const data=await res.json();resEl.innerHTML=`<div class="ai-bub bot" style="max-width:100%">${fmtAI(data.content?.[0]?.text||'Could not summarize.')}</div>`;}catch(e){resEl.innerHTML=`<div style="color:var(--red);font-size:.82rem">${e.message}</div>`;}}
+async function generateFlashcardsFromNote(){const body=strip(document.getElementById('noteEditor').innerHTML);if(!body.trim())return;const resEl=document.getElementById('aiNoteResult');resEl.style.display='block';resEl.innerHTML='<div style="color:var(--muted2);font-size:.82rem">Generating flashcards...</div>';try{const res=await fetch(API.ai,{method:'POST',headers:API_HEADERS,body:JSON.stringify({system:'Generate 8-12 flashcards from these notes. Respond ONLY with a JSON array of {"q":"question","a":"answer"} objects.',messages:[{role:'user',content:body}]})});const data=await res.json();let txt=(data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim();const cards=JSON.parse(txt);if(currentNoteId){const n=notes.find(x=>x.id===currentNoteId);if(n){n.flashcards=cards;save('flux_notes',notes);}}flashcards=cards;fcIndex=0;fcFlipped=false;resEl.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Generated ${cards.length} flashcards!</div>`;openFlashcards();}catch(e){resEl.innerHTML=`<div style="color:var(--red);font-size:.82rem">Error generating flashcards.</div>`;}}
 function openFlashcards(){if(!flashcards.length)return;fcIndex=0;fcFlipped=false;document.getElementById('notesEditorView').style.display='none';document.getElementById('flashcardView').style.display='block';renderFC();}
 function closeFlashcards(){document.getElementById('flashcardView').style.display='none';document.getElementById('notesEditorView').style.display='block';}
 function renderFC(){if(!flashcards.length)return;const fc=flashcards[fcIndex];document.getElementById('fcProgress').textContent=`Card ${fcIndex+1} / ${flashcards.length}`;document.getElementById('fcText').textContent=fcFlipped?fc.a:fc.q;document.getElementById('fcCard').style.background=fcFlipped?'rgba(var(--accent-rgb),.1)':'var(--card)';}
@@ -302,7 +305,7 @@ TASK ACTIONS:
 [{"action":"add_task","name":"...","priority":"high","date":"YYYY-MM-DD","type":"test","subject":"CHE"}]
 \`\`\``;}
 function execActions(reply){const match=reply.match(/```actions\s*([\s\S]*?)```/);if(!match)return null;let actions;try{actions=JSON.parse(match[1].trim());}catch(e){return null;}if(!Array.isArray(actions))return null;let results=[],changed=false;actions.forEach(a=>{if(a.action==='add_task'){const t={id:Date.now()+Math.random(),name:a.name||'Task',subject:a.subject||'',priority:a.priority||'med',date:a.date||'',type:a.type||'hw',done:false,rescheduled:0,createdAt:Date.now()};t.urgencyScore=calcUrgency(t);tasks.unshift(t);results.push('✓ Added: '+a.name);changed=true;}else if(a.action==='delete_done'){const c=tasks.filter(t=>t.done).length;tasks=tasks.filter(t=>!t.done);results.push('✓ Removed '+c+' done tasks');changed=true;}else if(a.action==='mark_done'){const t=tasks.find(x=>x.name?.toLowerCase().includes((a.name||'').toLowerCase()));if(t){t.done=true;results.push('✓ Done: '+t.name);changed=true;}}});if(changed){save('tasks',tasks);renderStats();renderTasks();renderCalendar();renderCountdown();}return results.length?`<div style="padding:8px 10px;background:rgba(var(--accent-rgb),.08);border-radius:8px;font-size:.8rem;border:1px solid rgba(var(--accent-rgb),.2)">${results.join('<br>')}</div>`:null;}
-async function sendAI(){const input=document.getElementById('aiInput'),btn=document.getElementById('aiSendBtn');if(!input||!btn)return;const text=input.value.trim();if(!text&&!aiPendingImg)return;if(btn.disabled)return;document.getElementById('aiSugs').style.display='none';appendMsg('user',text||'📷 Analyze image');let msgContent=text;if(aiPendingImg){msgContent=text||'Please analyze this image.';aiPendingImg=null;const prev=document.getElementById('aiImgPreview');if(prev)prev.style.display='none';}aiHistory.push({role:'user',content:msgContent});input.value='';input.style.height='auto';btn.disabled=true;const thinkEl=appendMsg('bot','',true);try{const res=await fetch('/api/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:buildAIPrompt(),messages:aiHistory.map(m=>({role:m.role,content:typeof m.content==='string'?m.content:JSON.stringify(m.content)}))})});if(!res.ok){const err=await res.json().catch(()=>({error:'Unknown error'}));throw new Error(err.error||'HTTP '+res.status);}const data=await res.json();const reply=data.content?.[0]?.text||"I didn't get a response — try again.";thinkEl.remove();const ar=execActions(reply);const clean=reply.replace(/```actions[\s\S]*?```/g,'').trim();appendMsg('bot',clean+(ar?'\n\n'+ar:''));aiHistory.push({role:'assistant',content:reply});if(aiHistory.length>24)aiHistory=aiHistory.slice(-24);}catch(err){thinkEl.remove();appendMsg('bot','Something went wrong: '+err.message);}btn.disabled=false;input.focus();}
+async function sendAI(){const input=document.getElementById('aiInput'),btn=document.getElementById('aiSendBtn');if(!input||!btn)return;const text=input.value.trim();if(!text&&!aiPendingImg)return;if(btn.disabled)return;document.getElementById('aiSugs').style.display='none';appendMsg('user',text||'📷 Analyze image');let msgContent=text;if(aiPendingImg){msgContent=text||'Please analyze this image.';aiPendingImg=null;const prev=document.getElementById('aiImgPreview');if(prev)prev.style.display='none';}aiHistory.push({role:'user',content:msgContent});input.value='';input.style.height='auto';btn.disabled=true;const thinkEl=appendMsg('bot','',true);try{const res=await fetch(API.ai,{method:'POST',headers:API_HEADERS,body:JSON.stringify({system:buildAIPrompt(),messages:aiHistory.map(m=>({role:m.role,content:typeof m.content==='string'?m.content:JSON.stringify(m.content)}))})});if(!res.ok){const err=await res.json().catch(()=>({error:'Unknown error'}));throw new Error(err.error||'HTTP '+res.status);}const data=await res.json();const reply=data.content?.[0]?.text||"I didn't get a response — try again.";thinkEl.remove();const ar=execActions(reply);const clean=reply.replace(/```actions[\s\S]*?```/g,'').trim();appendMsg('bot',clean+(ar?'\n\n'+ar:''));aiHistory.push({role:'assistant',content:reply});if(aiHistory.length>24)aiHistory=aiHistory.slice(-24);}catch(err){thinkEl.remove();appendMsg('bot','Something went wrong: '+err.message);}btn.disabled=false;input.focus();}
 
 // ══ SUPABASE SYNC ══
 // All user data stored in one row per user in a `user_data` table.
@@ -491,7 +494,7 @@ async function analyzeScheduleImg(){
   try{
     const base64=obScheduleImgData.split(',')[1];
     const mime=obScheduleImgData.split(';')[0].split(':')[1];
-    const res=await fetch('/api/gemini-proxy',{
+    const res=await fetch(API.gemini,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({imageBase64:base64,mimeType:mime,
         prompt:'This is a student class schedule. Extract every class and return ONLY a JSON array: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods sequentially if not shown. Empty string for missing fields. ONLY the JSON array.'})
@@ -634,3 +637,241 @@ function handleSignedOut(){
   if(!shownSplash){sessionStorage.setItem('flux_splash_shown','1');runSplash(()=>initAuth());}
   else{document.getElementById('splash').style.display='none';initAuth();}
 })();
+
+// ══ IMAGE IMPORT FEATURES ══
+
+// Generic Gemini vision call
+async function callGemini(imageBase64, mimeType, prompt) {
+  const res = await fetch(API.gemini, {
+    method: 'POST', headers: API_HEADERS,
+    body: JSON.stringify({ imageBase64, mimeType, prompt })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error||'Gemini error'); }
+  return (await res.json()).text || '';
+}
+
+// Import grades from photo
+async function importGradesFromPhoto(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const el = document.getElementById('gradesImportResult');
+  el.style.display = 'block';
+  el.innerHTML = '<div style="color:var(--muted2);font-size:.82rem;font-family:JetBrains Mono,monospace">📷 Reading grades with Gemini...</div>';
+  try {
+    const base64 = await fileToBase64(file);
+    const txt = await callGemini(base64, file.type,
+      'This is a student gradebook or report card. Extract every subject and its grade percentage. Return ONLY a JSON object like {"Chemistry":92,"Math 3":88}. Use the exact subject names shown. Return ONLY the JSON object.');
+    const clean = txt.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    let imported = 0;
+    Object.entries(parsed).forEach(([k,v]) => { if(k&&v!==undefined){grades[k]=String(v);imported++;} });
+    save('flux_grades', grades);
+    renderGradeInputs(); renderGradeOverview(); updateGPADisplay();
+    el.innerHTML = `<div style="color:var(--green);font-size:.82rem">✓ Imported ${imported} grades! Review and save below.</div>`;
+    syncKey('grades', grades);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:.82rem">Could not read grades: ${e.message}</div>`;
+  }
+}
+
+// Import note content from photo (assignment guide, worksheet, etc.)
+async function importNoteFromPhoto(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const resEl = document.getElementById('aiNoteResult');
+  resEl.style.display = 'block';
+  resEl.innerHTML = '<div style="color:var(--muted2);font-size:.82rem">📷 Reading image with Gemini...</div>';
+  try {
+    const base64 = await fileToBase64(file);
+    const txt = await callGemini(base64, file.type,
+      'This is a student assignment, worksheet, or lesson guide. Extract all the text and content from it. Format it clearly with headers and bullet points where appropriate. Preserve all important details like questions, instructions, and due dates.');
+    const editor = document.getElementById('noteEditor');
+    if (editor) {
+      const existing = editor.innerHTML;
+      editor.innerHTML = existing + (existing ? '<hr style="border-color:var(--border);margin:12px 0">' : '') + '<p>' + fmtAI(txt) + '</p>';
+    }
+    resEl.innerHTML = '<div style="color:var(--green);font-size:.82rem">✓ Content added to note. Save when ready.</div>';
+  } catch(e) {
+    resEl.innerHTML = `<div style="color:var(--red);font-size:.82rem">Could not read image: ${e.message}</div>`;
+  }
+}
+
+// Import schedule from photo (used in onboarding + school tab)
+async function importScheduleFromPhoto(event, resultElId) {
+  const file = event.target.files[0]; if (!file) return;
+  const resEl = document.getElementById(resultElId||'schoolImgResult');
+  if (resEl) { resEl.style.display='block'; resEl.innerHTML='<div style="color:var(--muted2);font-size:.82rem;font-family:JetBrains Mono,monospace">📷 Reading schedule with Gemini...</div>'; }
+  try {
+    const base64 = await fileToBase64(file);
+    const txt = await callGemini(base64, file.type,
+      'This is a student class schedule. Extract every class/period and return ONLY a JSON array: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods 1,2,3 if not shown. Empty string for missing fields. ONLY the JSON array.');
+    const clean = txt.replace(/```json|```/g,'').trim();
+    const match = clean.match(/\[[\s\S]*\]/);
+    const parsed = JSON.parse(match ? match[0] : clean);
+    classes = parsed.map((c,i) => ({id:Date.now()+i, period:c.period||i+1, name:c.name||'Class '+(i+1), teacher:c.teacher||'', room:c.room||''}));
+    save('flux_classes', classes);
+    renderSchool();
+    if (resEl) resEl.innerHTML = `<div style="color:var(--green);font-size:.82rem">✓ Imported ${classes.length} classes!</div>`;
+    syncKey('classes', classes);
+  } catch(e) {
+    if (resEl) resEl.innerHTML = `<div style="color:var(--red);font-size:.82rem">Could not read schedule: ${e.message}</div>`;
+  }
+}
+
+// Utility: file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ══ CANVAS SYNC ══
+let canvasToken = load('flux_canvas_token', '');
+let canvasUrl = load('flux_canvas_url', '');
+
+function saveCanvasConfig() {
+  canvasToken = document.getElementById('canvasToken')?.value.trim() || '';
+  canvasUrl = document.getElementById('canvasUrl')?.value.trim() || '';
+  save('flux_canvas_token', canvasToken);
+  save('flux_canvas_url', canvasUrl);
+  const b = event?.target; if(b){b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',1500);}
+  renderCanvasStatus();
+}
+
+function renderCanvasStatus() {
+  const el = document.getElementById('canvasStatus'); if (!el) return;
+  if (canvasToken && canvasUrl) {
+    el.innerHTML = `<div class="sync-badge synced">✓ Canvas connected</div>`;
+  } else {
+    el.innerHTML = `<div class="sync-badge offline">○ Not connected</div>`;
+  }
+}
+
+async function syncCanvas() {
+  if (!canvasToken || !canvasUrl) { alert('Enter your Canvas URL and token first.'); return; }
+  const btn = event?.target; if(btn){btn.textContent='Syncing...';btn.disabled=true;}
+  try {
+    const base = canvasUrl.replace(/\/+$/, '');
+    const res = await fetch(`${API.canvas}?url=${encodeURIComponent(base+'/api/v1/courses?enrollment_state=active&per_page=20')}&token=${encodeURIComponent(canvasToken)}`, { headers: API_HEADERS });
+    const courses = await res.json();
+    if (!Array.isArray(courses)) throw new Error('Invalid response from Canvas');
+    let added = 0;
+    for (const course of courses.slice(0, 10)) {
+      const aRes = await fetch(`${API.canvas}?url=${encodeURIComponent(base+'/api/v1/courses/'+course.id+'/assignments?per_page=30&order_by=due_at')}&token=${encodeURIComponent(canvasToken)}`, { headers: API_HEADERS });
+      const assignments = await aRes.json();
+      if (!Array.isArray(assignments)) continue;
+      assignments.forEach(a => {
+        if (!a.due_at) return;
+        const due = a.due_at.slice(0,10);
+        const name = a.name || 'Assignment';
+        if (!tasks.find(t => t.name === name && t.date === due)) {
+          tasks.unshift({ id: Date.now()+Math.random(), name, date: due, subject: '', priority: 'med', type: 'hw', done: false, rescheduled: 0, createdAt: Date.now(), urgencyScore: 0 });
+          added++;
+        }
+      });
+    }
+    save('tasks', tasks); renderStats(); renderTasks(); renderCountdown();
+    if(btn){btn.textContent=`✓ Imported ${added} tasks`;setTimeout(()=>{btn.textContent='Sync Canvas';btn.disabled=false;},2000);}
+    syncKey('tasks', tasks);
+  } catch(e) {
+    if(btn){btn.textContent='Sync failed';btn.disabled=false;}
+    alert('Canvas sync error: '+e.message);
+  }
+}
+
+// ══ GMAIL PANEL ══
+// Gmail uses Google OAuth (same token from Supabase Google login)
+// We read emails via Gmail API using the user's access token
+let gmailEmails = [];
+let gmailToken = null;
+
+async function loadGmail() {
+  const el = document.getElementById('gmailList');
+  if (!el) return;
+  // Get access token from Supabase session
+  const sb = getSB(); if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.provider_token) {
+    el.innerHTML = `<div class="empty" style="padding:24px">
+      <div style="font-size:1.5rem;margin-bottom:10px">📧</div>
+      <div style="font-size:.88rem;font-weight:600;margin-bottom:6px">Connect Gmail</div>
+      <div style="font-size:.78rem;color:var(--muted2);margin-bottom:16px">Sign in with Google to view your school emails here.</div>
+      <button onclick="signInWithGoogleGmail()" style="padding:10px 20px">Sign in with Google</button>
+    </div>`;
+    return;
+  }
+  gmailToken = session.provider_token;
+  el.innerHTML = '<div style="color:var(--muted2);font-size:.82rem;padding:16px;font-family:JetBrains Mono,monospace">Loading emails...</div>';
+  try {
+    // Fetch recent emails
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=20&q=in:inbox', {
+      headers: { 'Authorization': `Bearer ${gmailToken}` }
+    });
+    if (!res.ok) throw new Error('Gmail API error '+res.status);
+    const data = await res.json();
+    if (!data.messages?.length) { el.innerHTML = '<div class="empty">No emails found.</div>'; return; }
+    // Fetch details for each
+    gmailEmails = await Promise.all(data.messages.map(async m => {
+      const detail = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, {
+        headers: { 'Authorization': `Bearer ${gmailToken}` }
+      });
+      const d = await detail.json();
+      const headers = d.payload?.headers || [];
+      const get = name => headers.find(h => h.name===name)?.value || '';
+      return { id: m.id, subject: get('Subject'), from: get('From'), date: get('Date'), snippet: d.snippet || '' };
+    }));
+    renderGmailList();
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:.82rem;padding:16px">${e.message}<br><br><button onclick="signInWithGoogleGmail()" style="padding:8px 16px;font-size:.8rem">Re-connect Gmail</button></div>`;
+  }
+}
+
+async function signInWithGoogleGmail() {
+  const sb = getSB(); if (!sb) return;
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/',
+      scopes: 'https://www.googleapis.com/auth/gmail.readonly',
+      queryParams: { access_type: 'offline', prompt: 'consent' }
+    }
+  });
+}
+
+function renderGmailList() {
+  const el = document.getElementById('gmailList'); if (!el) return;
+  if (!gmailEmails.length) { el.innerHTML = '<div class="empty">No emails.</div>'; return; }
+  el.innerHTML = gmailEmails.map(e => `
+    <div class="gmail-item" onclick="expandEmail('${e.id}')">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.subject||'(no subject)')}</div>
+          <div style="font-size:.72rem;color:var(--muted2);font-family:'JetBrains Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.from)}</div>
+          <div style="font-size:.78rem;color:var(--muted2);margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(e.snippet)}</div>
+        </div>
+        <button onclick="event.stopPropagation();addEmailAsTask('${e.id}')" style="padding:5px 10px;font-size:.72rem;white-space:nowrap;background:rgba(var(--accent-rgb),.15);border:1px solid rgba(var(--accent-rgb),.3);color:var(--accent)">+ Task</button>
+      </div>
+    </div>`).join('');
+}
+
+function addEmailAsTask(id) {
+  const email = gmailEmails.find(e => e.id === id); if (!email) return;
+  const task = {
+    id: Date.now(), name: email.subject || 'Email task',
+    date: '', subject: '', priority: 'med', type: 'hw',
+    notes: `From: ${email.from}\n\n${email.snippet}`,
+    done: false, rescheduled: 0, createdAt: Date.now()
+  };
+  task.urgencyScore = calcUrgency(task);
+  tasks.unshift(task); save('tasks', tasks);
+  renderStats(); renderTasks();
+  syncKey('tasks', tasks);
+  // Show feedback
+  const btn = event?.target; if(btn){btn.textContent='✓ Added';btn.style.color='var(--green)';setTimeout(()=>{btn.textContent='+ Task';btn.style.color='var(--accent)';},2000);}
+}
+
+function renderGmail() {
+  loadGmail();
+}
+
