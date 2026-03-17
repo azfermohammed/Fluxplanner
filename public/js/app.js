@@ -32,6 +32,27 @@ let schoolInfo=load('flux_school',{locker:'',combo:'',counselor:'',studentID:''}
 let classes=load('flux_classes',[]);
 let teacherNotes=load('flux_teacher_notes',[]);
 
+// Tab config — each tab has id, icon, label, visible flag
+const DEFAULT_TABS=[
+  {id:'dashboard',icon:'⚡',label:'Dashboard',visible:true},
+  {id:'calendar',icon:'📅',label:'Calendar',visible:true},
+  {id:'ai',icon:'✦',label:'Flux AI',visible:true},
+  {id:'school',icon:'🏫',label:'School Info',visible:true},
+  {id:'grades',icon:'📊',label:'Grades',visible:true},
+  {id:'notes',icon:'📝',label:'Notes',visible:true},
+  {id:'timer',icon:'⏱',label:'Focus Timer',visible:true},
+  {id:'profile',icon:'👤',label:'Profile',visible:true},
+  {id:'goals',icon:'🎯',label:'Goals',visible:true},
+  {id:'habits',icon:'🔥',label:'Habits',visible:true},
+  {id:'mood',icon:'😊',label:'Mood',visible:true},
+  {id:'gmail',icon:'📧',label:'Gmail',visible:true},
+  {id:'settings',icon:'⚙',label:'Settings',visible:true},
+];
+let tabConfig=load('flux_tabs',DEFAULT_TABS);
+// Ensure new tabs get added if missing
+DEFAULT_TABS.forEach(dt=>{if(!tabConfig.find(t=>t.id===dt.id))tabConfig.push({...dt});});
+save('flux_tabs',tabConfig);
+
 let taskFilter='all',editingId=null,editingGoalId=null;
 let aiHistory=[],aiPendingImg=null;
 // Canvas + Gmail — declared here so renderProfile/renderCanvasStatus can access them at init time
@@ -117,22 +138,68 @@ function initLoginFeaturePills(){
 
 // ══ NAV ══
 function nav(id,btn){
+  // Check if tab is visible
+  const tc=tabConfig.find(t=>t.id===id);
+  if(tc&&!tc.visible){nav('dashboard');return;}
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const panel=document.getElementById(id);if(panel)panel.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll(`[data-tab="${id}"]`).forEach(b=>b.classList.add('active'));
   document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
   const bni=document.querySelector(`.bnav-item[data-tab="${id}"]`);if(bni)bni.classList.add('active');
   const tTitle=document.getElementById('topbarTitle');if(tTitle)tTitle.textContent=PANEL_TITLES[id]||id;
-  const fns={dashboard:()=>{renderStats();renderTasks();renderCountdown();renderSmartSug();},calendar:()=>renderCalendar(),school:()=>renderSchool(),grades:()=>{renderGradeInputs();renderGradeOverview();renderWeightedRows();calcWeighted();},notes:()=>renderNotesList(),habits:()=>{renderHabitList();renderHeatmap();},goals:()=>{renderGoalsList();renderCollegeList();},mood:()=>{renderMoodHistory();renderAffirmation();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>renderAISugs(),settings:()=>renderNoHWList(),gmail:()=>loadGmail()};
+  const fns={dashboard:()=>{renderStats();renderTasks();renderCountdown();renderSmartSug();},calendar:()=>renderCalendar(),school:()=>renderSchool(),grades:()=>{renderGradeInputs();renderGradeOverview();renderWeightedRows();calcWeighted();},notes:()=>renderNotesList(),habits:()=>{renderHabitList();renderHeatmap();},goals:()=>{renderGoalsList();renderCollegeList();},mood:()=>{renderMoodHistory();renderAffirmation();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>renderAISugs(),settings:()=>{renderNoHWList();renderTabCustomizer();},gmail:()=>loadGmail()};
   fns[id]?.();
 }
 function navMob(id){closeDrawer();nav(id);}
 
 // ══ SIDEBAR ══
+function renderSidebars(){
+  const groups=[
+    {label:'Main',ids:['dashboard','calendar','ai']},
+    {label:'School',ids:['school','grades','notes','timer']},
+    {label:'Me',ids:['profile','goals','habits','mood','gmail','settings']},
+  ];
+  const visibleIds=new Set(tabConfig.filter(t=>t.visible).map(t=>t.id));
+  // Build nav HTML for both sidebar and drawer
+  const buildNav=(clickFn)=>groups.map(g=>{
+    const items=g.ids.filter(id=>visibleIds.has(id)).map(id=>{
+      const tc=tabConfig.find(t=>t.id===id)||DEFAULT_TABS.find(t=>t.id===id);
+      return`<button class="nav-item" onclick="${clickFn}('${id}')" data-tab="${id}"><span class="ni">${tc?.icon||'•'}</span><span class="nl">${tc?.label||id}</span></button>`;
+    }).join('');
+    if(!items)return'';
+    return`<div class="nav-group"><div class="nav-group-label">${g.label}</div>${items}</div>`;
+  }).join('');
+
+  const sidebarNav=document.querySelector('.sidebar-nav');
+  if(sidebarNav)sidebarNav.innerHTML=buildNav('nav');
+
+  const drawerNav=document.querySelector('.mob-drawer-nav');
+  if(drawerNav)drawerNav.innerHTML=buildNav('navMob');
+
+  // Bottom nav — show first 5 visible tabs
+  const bnav=document.querySelector('.bottom-nav');
+  if(bnav){
+    const visible=tabConfig.filter(t=>t.visible);
+    const first5=visible.slice(0,5);
+    bnav.innerHTML=first5.map(t=>`<button class="bnav-item" onclick="nav('${t.id}',this)" data-tab="${t.id}"><span class="bni">${t.icon}</span>${t.label}</button>`).join('')
+      +`<button class="bnav-item" onclick="openDrawer()" id="moreBtn"><span class="bni">☰</span>More</button>`;
+  }
+}
 function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;save('flux_sidebar_collapsed',sidebarCollapsed);const sb=document.getElementById('sidebar');if(sb)sb.classList.toggle('collapsed',sidebarCollapsed);}
-function openDrawer(){document.getElementById('drawerOverlay').classList.add('open');document.getElementById('mobDrawer').classList.add('open');}
-function closeDrawer(){document.getElementById('drawerOverlay').classList.remove('open');document.getElementById('mobDrawer').classList.remove('open');}
+function openDrawer(){
+  // Detect which side the ☰ button is on and open drawer from that side
+  const btn=document.getElementById('moreBtn')||document.querySelector('.mob-menu-btn');
+  const drawer=document.getElementById('mobDrawer');
+  if(drawer&&btn){
+    const bRect=btn.getBoundingClientRect();
+    const isRight=bRect.left>window.innerWidth/2;
+    drawer.classList.toggle('drawer-right',isRight);
+  }
+  document.getElementById('drawerOverlay').classList.add('open');
+  if(drawer)drawer.classList.add('open');
+}
+function closeDrawer(){document.getElementById('drawerOverlay').classList.remove('open');const d=document.getElementById('mobDrawer');if(d)d.classList.remove('open');}
 
 // ══ TASKS ══
 function calcUrgency(task){const now=new Date();now.setHours(0,0,0,0);const days=task.date?Math.max(0,Math.floor((new Date(task.date+'T00:00:00')-now)/86400000)):99;const pMap={high:3,med:2,low:1};return(pMap[task.priority]||2)*(task.difficulty||3)/Math.max(days,0.5);}
@@ -311,6 +378,44 @@ function saveDND(){settings.dndStart=document.getElementById('dndStart').value;s
 function saveDailyGoal(){settings.dailyGoalHrs=parseFloat(document.getElementById('dailyGoalHrs').value)||2;save('flux_settings',settings);const done=tMins/60,goal=settings.dailyGoalHrs;const el=document.getElementById('dailyGoalStatus');if(el)el.textContent=done>=goal?`✓ Goal reached! (${done.toFixed(1)}h / ${goal}h)`:`Progress: ${done.toFixed(1)}h / ${goal}h`;}
 function loadSettingsUI(){const pt=document.getElementById('panicToggle');if(pt)pt.classList.toggle('on',settings.panic!==false);const qt=document.getElementById('quietToggle');if(qt)qt.classList.toggle('on',settings.quiet!==false);const ds=document.getElementById('dndStart');if(ds)ds.value=settings.dndStart||'07:50';const de=document.getElementById('dndEnd');if(de)de.value=settings.dndEnd||'14:30';const dg=document.getElementById('dailyGoalHrs');if(dg)dg.value=settings.dailyGoalHrs||2;}
 function renderNoHWList(){const el=document.getElementById('noHWList');if(!el)return;const sorted=[...noHomeworkDays].sort();const groups=[];let rs=null,rp=null;const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});sorted.forEach(d=>{if(!rs){rs=d;rp=d;}else{const prev=new Date(rp+'T12:00:00');prev.setDate(prev.getDate()+1);if(prev.toISOString().slice(0,10)===d)rp=d;else{groups.push(rs===rp?fmt(rs):fmt(rs)+' – '+fmt(rp));rs=d;rp=d;}}});if(rs)groups.push(rs===rp?fmt(rs):fmt(rs)+' – '+fmt(rp));el.innerHTML=groups.map(g=>`<div>📵 ${g}</div>`).join('');}
+
+function renderTabCustomizer(){
+  const el=document.getElementById('tabCustomizerList');if(!el)return;
+  el.innerHTML=tabConfig.map((t,i)=>`
+    <div class="tab-row" draggable="true" data-idx="${i}" ondragstart="tcDragStart(event,${i})" ondragover="tcDragOver(event)" ondrop="tcDrop(event,${i})">
+      <span class="tab-drag-handle">⠿</span>
+      <span class="tab-row-icon">${t.icon}</span>
+      <span class="tab-row-name">${t.label}</span>
+      <button class="tab-row-toggle ${t.visible?'on':''}" onclick="tcToggle(${i})" title="${t.visible?'Hide':'Show'}"></button>
+    </div>`).join('');
+}
+let tcDragIdx=null;
+function tcDragStart(e,i){tcDragIdx=i;e.currentTarget.classList.add('dragging');}
+function tcDragOver(e){e.preventDefault();}
+function tcDrop(e,i){
+  e.preventDefault();
+  if(tcDragIdx===null||tcDragIdx===i)return;
+  const moved=tabConfig.splice(tcDragIdx,1)[0];
+  tabConfig.splice(i,0,moved);
+  tcDragIdx=null;
+  save('flux_tabs',tabConfig);
+  renderTabCustomizer();
+  renderSidebars();
+}
+function tcToggle(i){
+  if(tabConfig[i].id==='settings'&&tabConfig[i].visible){return;}
+  tabConfig[i].visible=!tabConfig[i].visible;
+  save('flux_tabs',tabConfig);
+  renderTabCustomizer();
+  renderSidebars();
+}
+function resetTabs(){
+  tabConfig=DEFAULT_TABS.map(t=>({...t}));
+  save('flux_tabs',tabConfig);
+  renderTabCustomizer();
+  renderSidebars();
+  const b=event?.target;if(b){b.textContent='✓ Reset!';setTimeout(()=>b.textContent='↺ Reset to defaults',1500);}
+}
 function exportData(){const data={tasks,grades,notes:notes.map(n=>({...n,body:strip(n.body)})),habits,goals,colleges,moodHistory,schoolInfo,classes,settings,exportDate:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flux-data.json';a.click();URL.revokeObjectURL(url);}
 function exportToICal(){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Flux Planner//EN'];tasks.filter(t=>t.date&&!t.done).forEach(t=>{const d=t.date.replace(/-/g,'');lines.push('BEGIN:VEVENT','DTSTART;VALUE=DATE:'+d,'SUMMARY:'+t.name,'END:VEVENT');});lines.push('END:VCALENDAR');const blob=new Blob([lines.join('\r\n')],{type:'text/calendar'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flux.ics';a.click();URL.revokeObjectURL(url);}
 function clearCache(){if(!confirm('Clear all local data?'))return;const keep=['flux_settings','flux_accent','flux_accent_rgb','flux_theme','profile','flux_user_name'];Object.keys(localStorage).forEach(k=>{if(!keep.includes(k))localStorage.removeItem(k);});tasks=[];grades={};notes=[];habits=[];goals=[];colleges=[];moodHistory=[];renderStats();renderTasks();}
@@ -508,7 +613,7 @@ function obFinish(){
   const ob=document.getElementById('onboarding');if(ob)ob.classList.remove('visible');
   document.getElementById('app').classList.add('visible');
   spawnConfetti();
-  renderProfile();renderSchool();
+  renderProfile();renderSchool();renderSidebars();
   if(currentUser)syncToCloud();
 }
 function _updateSidebarName(name){
@@ -632,11 +737,10 @@ function confirmGuestLogin(){
   const onboarded=load('flux_onboarded',false);
   const hasData=tasks.length>0||notes.length>0||Object.keys(grades).length>0||classes.length>0;
   if(!onboarded&&!hasData){
-    // First time guest — show onboarding
     showOnboarding();
   }else{
-    // Returning guest — go straight to app
     document.getElementById('app').classList.add('visible');
+    renderSidebars();
   }
   setSyncStatus('offline');
 }
@@ -672,6 +776,7 @@ function showLoginOrApp(){
     document.getElementById('loginScreen').classList.remove('visible');
     document.getElementById('app').classList.add('visible');
     setSyncStatus('offline');
+    renderSidebars();
   }else{
     document.getElementById('loginScreen').classList.add('visible');
     initLoginFeaturePills();
@@ -698,12 +803,11 @@ async function handleSignedIn(user,session){
   const isFirstTime=!onboarded&&!hasData;
   const ob=document.getElementById('onboarding');
   if(isFirstTime){
-    // First time with this Google account — show onboarding
     if(ob)ob.classList.add('visible');
   }else{
-    // Returning user — go straight to app
     if(ob)ob.classList.remove('visible');
     document.getElementById('app').classList.add('visible');
+    renderSidebars();
   }
   setInterval(syncToCloud,5*60*1000);
 }
@@ -774,6 +878,7 @@ function initFeaturePills(){
   updateTDisplay();renderTDots();updateTStats();
   checkAllPanic();setInterval(checkAllPanic,60000);
   initFeaturePills();
+  renderSidebars();
 
   // ── FLOW: Splash (once per session) → Login → (1st time) Onboarding → App ──
   const afterSplash = () => initAuth();
@@ -998,16 +1103,17 @@ async function loadGmail(){
 
 function renderGmailList(){
   const el=document.getElementById('gmailList');if(!el)return;
-  if(!gmailEmails.length){el.innerHTML='<div class="empty">No emails.</div>';return;}
-  el.innerHTML=gmailEmails.map(e=>`
+  if(!gmailEmails.length){el.innerHTML='<div class="empty">No emails found.</div>';return;}
+  el.innerHTML=`<div style="font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:4px 4px 10px">${gmailEmails.length} recent emails · tap + Task to add to planner</div>`
+    +gmailEmails.map(e=>`
     <div class="gmail-item">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.subject||'(no subject)')}</div>
+          <div style="font-size:.87rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.subject||'(no subject)')}</div>
           <div style="font-size:.72rem;color:var(--muted2);font-family:'JetBrains Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.from)}</div>
-          <div style="font-size:.78rem;color:var(--muted2);margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(e.snippet)}</div>
+          <div style="font-size:.79rem;color:var(--muted2);margin-top:5px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(e.snippet)}</div>
         </div>
-        <button onclick="addEmailAsTask('${e.id}')" style="padding:5px 10px;font-size:.72rem;white-space:nowrap;background:rgba(var(--accent-rgb),.15);border:1px solid rgba(var(--accent-rgb),.3);color:var(--accent);flex-shrink:0">+ Task</button>
+        <button onclick="addEmailAsTask('${e.id}')" style="padding:6px 12px;font-size:.72rem;white-space:nowrap;background:rgba(var(--accent-rgb),.14);border:1px solid rgba(var(--accent-rgb),.3);color:var(--accent);flex-shrink:0;border-radius:10px;margin:0">+ Task</button>
       </div>
     </div>`).join('');
 }
