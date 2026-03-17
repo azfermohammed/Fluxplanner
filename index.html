@@ -4,36 +4,91 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Flux Planner</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="public/css/styles.css">
+<link rel="stylesheet" href="public/css/login.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <!-- ══ SPLASH SCREEN ══ -->
-<div id="splash">
-  <div class="splash-logo">Flux</div>
-  <div class="splash-sub">Planner</div>
-  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
-</div>
+<!-- Built dynamically by splash.js, just needs the container -->
+<div id="splash"></div>
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="loginScreen">
-  <div class="login-card">
-    <div class="login-logo">Flux</div>
-    <div class="login-tagline">YOUR SMART SCHOOL PLANNER</div>
-    <button class="login-google-btn" onclick="signInWithGoogle()">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>
-      Continue with Google
-    </button>
-    <div class="login-divider">or</div>
-    <span class="login-skip" onclick="skipLogin()">Continue without signing in</span>
-    <div class="login-note">Sign in to sync your data across all your devices. Your data is tied to your Google account.</div>
+  <!-- Animated background -->
+  <div class="login-bg"></div>
+  <div class="login-blob login-blob-1"></div>
+  <div class="login-blob login-blob-2"></div>
+  <div class="login-blob login-blob-3"></div>
+
+  <div class="login-scroll">
+    <!-- Main card -->
+    <div class="login-card">
+      <div class="login-logo">Flux</div>
+      <div class="login-tagline">YOUR SMART SCHOOL PLANNER</div>
+
+      <button class="login-google-btn" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <div class="login-divider">or</div>
+      <span class="login-skip" onclick="skipLogin()">Continue without signing in</span>
+      <div class="login-note">Sign in to sync your data across all devices. Your planner stays with your Google account.</div>
+    </div>
+
+    <!-- Scrolling capability pills -->
+    <div class="feat-pills-wrap" style="margin-top:28px">
+      <div class="feat-pills" id="featPills">
+        <!-- Pills injected by JS so we can duplicate for seamless scroll -->
+      </div>
+    </div>
+
+    <!-- Feature grid -->
+    <div class="login-features">
+      <div class="login-features-title">Everything you need · nothing you don't</div>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon">✦</div>
+          <div class="feat-name">Flux AI Tutor</div>
+          <div class="feat-desc">Ask anything — study plans, flashcards, exam prep powered by Llama 3.3</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📷</div>
+          <div class="feat-name">Vision Import</div>
+          <div class="feat-desc">Snap your schedule or grades — Gemini reads it instantly</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📊</div>
+          <div class="feat-name">GPA Tracker</div>
+          <div class="feat-desc">4-decimal GPA, weighted calculator, final grade estimator</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">⏱</div>
+          <div class="feat-name">Focus Timer</div>
+          <div class="feat-desc">Pomodoro + ambient sounds + weekly heatmap to track deep work</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📅</div>
+          <div class="feat-name">Smart Calendar</div>
+          <div class="feat-desc">A/B day tracking, no-HW days, panic mode for urgent tasks</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">☁️</div>
+          <div class="feat-name">Cloud Sync</div>
+          <div class="feat-desc">All data tied to your Google account, synced across every device</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-bottom"></div>
   </div>
 </div>
 
@@ -59,7 +114,7 @@
         <span class="ob-label">Grade</span>
         <div class="ob-chip-wrap" id="obGradeChips">
           <div class="ob-chip" onclick="selectObChip(this,'obGrade','9')">9th</div>
-          <div class="ob-chip" onclick="selectObChip(this,'obGrade','10')">10th</div>
+          <div class="ob-chip active" onclick="selectObChip(this,'obGrade','10')">10th</div>
           <div class="ob-chip" onclick="selectObChip(this,'obGrade','11')">11th</div>
           <div class="ob-chip" onclick="selectObChip(this,'obGrade','12')">12th</div>
         </div>
@@ -75,13 +130,13 @@
         <input type="text" id="obSchool" placeholder="e.g. International Academy East" style="margin:0">
         <span class="ob-label">IB Program / Track</span>
         <div class="ob-chip-wrap" id="obTrackChips">
-          <div class="ob-chip" onclick="selectObChip(this,'obTrack','Pre-IB / MYP')">Pre-IB / MYP</div>
+          <div class="ob-chip active" onclick="selectObChip(this,'obTrack','Pre-IB / MYP')">Pre-IB / MYP</div>
           <div class="ob-chip" onclick="selectObChip(this,'obTrack','IB Diploma')">IB Diploma</div>
           <div class="ob-chip" onclick="selectObChip(this,'obTrack','Not IB')">Not IB</div>
         </div>
         <span class="ob-label">Counselor name <span style="color:var(--muted);font-weight:400">(optional)</span></span>
         <input type="text" id="obCounselor" placeholder="e.g. Ms. Johnson" style="margin:0">
-        <span class="ob-label">Locker number <span style="color:var(--muted);font-weight:400">(optional)</span></span>
+        <span class="ob-label">Locker <span style="color:var(--muted);font-weight:400">(optional)</span></span>
         <div style="display:flex;gap:8px">
           <input type="text" id="obLocker" placeholder="e.g. 342" style="margin:0;flex:1">
           <input type="text" id="obCombo" placeholder="Combo e.g. 14-32-07" style="margin:0;flex:2">
@@ -94,7 +149,7 @@
       <div class="ob-step" id="ob-step-3">
         <div style="font-size:2rem;margin-bottom:10px">📋</div>
         <div class="ob-title">Your Schedule</div>
-        <div class="ob-sub">Upload a photo of your schedule and AI will read it automatically. Or add classes manually below.</div>
+        <div class="ob-sub">Upload a photo of your schedule and AI will read it automatically. Or skip and add classes manually later.</div>
         <div class="schedule-drop" id="scheduleDrop">
           <input type="file" accept="image/*" id="scheduleImg" onchange="handleScheduleImg(event)">
           <div style="font-size:1.6rem;margin-bottom:8px">📷</div>
@@ -118,13 +173,14 @@
         <button onclick="addObClass()" class="btn-sec" style="width:100%;padding:8px;font-size:.82rem">+ Add Class</button>
         <button class="ob-btn" onclick="obNext()" style="margin-top:14px">Continue →</button>
         <button class="ob-btn-sec" onclick="obBack()">← Back</button>
+        <div class="ob-skip" onclick="obNext()">Skip for now</div>
       </div>
 
       <!-- Step 4: Study style -->
       <div class="ob-step" id="ob-step-4">
         <div style="font-size:2rem;margin-bottom:10px">🧠</div>
         <div class="ob-title">How do you study?</div>
-        <div class="ob-sub">Flux will personalize suggestions based on how you learn best.</div>
+        <div class="ob-sub">Flux will personalize AI suggestions based on how you learn best.</div>
         <span class="ob-label">Learning style <span style="color:var(--muted);font-weight:400">(pick all that apply)</span></span>
         <div class="ob-chip-wrap">
           <div class="ob-chip" onclick="this.classList.toggle('active')" data-dna="visual">👁 Visual</div>
@@ -136,16 +192,6 @@
         <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
           <input type="range" id="obStudyGoal" min="0.5" max="6" step="0.5" value="2" style="flex:1;margin:0" oninput="document.getElementById('obGoalLabel').textContent=this.value+'h'">
           <span id="obGoalLabel" style="font-size:1rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent);min-width:32px">2h</span>
-        </div>
-        <span class="ob-label" style="margin-top:14px">Subjects you want to focus on</span>
-        <div class="ob-chip-wrap">
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="LIT">Am. Lit</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="AME">Am. Studies</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="CHE">Chemistry</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="FRE">French</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="MTH">Math 3</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="PHY">Physics</div>
-          <div class="ob-chip" onclick="this.classList.toggle('active')" data-focus="PP">Personal Project</div>
         </div>
         <button class="ob-btn" onclick="obFinish()">Let's go! 🚀</button>
         <button class="ob-btn-sec" onclick="obBack()">← Back</button>
@@ -332,72 +378,33 @@
       <div class="card">
         <h3>School Info</h3>
         <div class="school-info-grid">
-          <div class="info-tile">
-            <div class="info-tile-label">Locker Number</div>
-            <div class="info-tile-val" id="displayLocker">—</div>
-          </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Locker Combo</div>
-            <div class="info-tile-val" id="displayCombo" style="font-size:.85rem;letter-spacing:2px">—</div>
-            <div class="info-tile-sub" style="font-size:.6rem;color:var(--red)">🔒 Only you can see this</div>
-          </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Counselor</div>
-            <div class="info-tile-val" id="displayCounselor" style="font-size:.82rem">—</div>
-          </div>
-          <div class="info-tile">
-            <div class="info-tile-label">Student ID</div>
-            <div class="info-tile-val" id="displayStudentID">—</div>
-          </div>
+          <div class="info-tile"><div class="info-tile-label">Locker Number</div><div class="info-tile-val" id="displayLocker">—</div></div>
+          <div class="info-tile"><div class="info-tile-label">Locker Combo</div><div class="info-tile-val" id="displayCombo" style="font-size:.85rem;letter-spacing:2px">—</div><div class="info-tile-sub" style="font-size:.6rem;color:var(--red)">🔒 Only you can see this</div></div>
+          <div class="info-tile"><div class="info-tile-label">Counselor</div><div class="info-tile-val" id="displayCounselor" style="font-size:.82rem">—</div></div>
+          <div class="info-tile"><div class="info-tile-label">Student ID</div><div class="info-tile-val" id="displayStudentID">—</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div>
-            <label style="font-size:.72rem;color:var(--muted)">Locker #</label>
-            <input type="text" id="inputLocker" placeholder="e.g. 342" style="margin-bottom:0">
-          </div>
-          <div>
-            <label style="font-size:.72rem;color:var(--muted)">Combination</label>
-            <input type="text" id="inputCombo" placeholder="e.g. 14-32-07" style="margin-bottom:0">
-          </div>
-          <div>
-            <label style="font-size:.72rem;color:var(--muted)">Counselor Name</label>
-            <input type="text" id="inputCounselor" placeholder="e.g. Ms. Johnson" style="margin-bottom:0">
-          </div>
-          <div>
-            <label style="font-size:.72rem;color:var(--muted)">Student ID</label>
-            <input type="text" id="inputStudentID" placeholder="e.g. 123456" style="margin-bottom:0">
-          </div>
+          <div><label style="font-size:.72rem;color:var(--muted)">Locker #</label><input type="text" id="inputLocker" placeholder="e.g. 342" style="margin-bottom:0"></div>
+          <div><label style="font-size:.72rem;color:var(--muted)">Combination</label><input type="text" id="inputCombo" placeholder="e.g. 14-32-07" style="margin-bottom:0"></div>
+          <div><label style="font-size:.72rem;color:var(--muted)">Counselor Name</label><input type="text" id="inputCounselor" placeholder="e.g. Ms. Johnson" style="margin-bottom:0"></div>
+          <div><label style="font-size:.72rem;color:var(--muted)">Student ID</label><input type="text" id="inputStudentID" placeholder="e.g. 123456" style="margin-bottom:0"></div>
         </div>
         <button onclick="saveSchoolInfo()" style="width:100%">Save Info</button>
       </div>
-      <!-- Classes -->
       <div class="card">
         <h3>My Classes</h3>
         <div id="classesList"></div>
         <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:end;margin-top:10px">
-          <div>
-            <label style="font-size:.7rem;color:var(--muted)">Period</label>
-            <input type="number" id="classPeriod" min="1" max="8" placeholder="#" style="width:52px;margin:0;padding:8px 6px">
-          </div>
-          <div>
-            <label style="font-size:.7rem;color:var(--muted)">Class Name</label>
-            <input type="text" id="className" placeholder="e.g. Chemistry" style="margin:0">
-          </div>
-          <div>
-            <label style="font-size:.7rem;color:var(--muted)">Teacher</label>
-            <input type="text" id="classTeacher" placeholder="e.g. Mr. Smith" style="margin:0">
-          </div>
+          <div><label style="font-size:.7rem;color:var(--muted)">Period</label><input type="number" id="classPeriod" min="1" max="8" placeholder="#" style="width:52px;margin:0;padding:8px 6px"></div>
+          <div><label style="font-size:.7rem;color:var(--muted)">Class Name</label><input type="text" id="className" placeholder="e.g. Chemistry" style="margin:0"></div>
+          <div><label style="font-size:.7rem;color:var(--muted)">Teacher</label><input type="text" id="classTeacher" placeholder="e.g. Mr. Smith" style="margin:0"></div>
           <button onclick="addClass()" style="padding:10px 14px;align-self:end">+</button>
         </div>
-        <div style="margin-top:8px">
-          <label style="font-size:.7rem;color:var(--muted)">Room / Notes (optional)</label>
-          <input type="text" id="classRoom" placeholder="e.g. Room 204, A-day only" style="margin-bottom:0">
-        </div>
+        <div style="margin-top:8px"><label style="font-size:.7rem;color:var(--muted)">Room / Notes (optional)</label><input type="text" id="classRoom" placeholder="e.g. Room 204, A-day only" style="margin-bottom:0"></div>
       </div>
-      <!-- Photo import for schedule -->
       <div class="card">
         <h3>📷 Import Schedule from Photo</h3>
-        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:10px">Upload a screenshot of your schedule — Gemini AI will read it automatically.</div>
+        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:10px">Upload a screenshot — Gemini AI reads it automatically.</div>
         <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--card2)">
           <span style="font-size:1.5rem">📷</span>
           <div><div style="font-size:.85rem;font-weight:600">Upload schedule photo</div><div style="font-size:.72rem;color:var(--muted)">StudentConnect screenshot · printed schedule</div></div>
@@ -405,7 +412,6 @@
         </label>
         <div id="schoolImgResult" style="display:none;margin-top:10px"></div>
       </div>
-      <!-- Teacher quirk notes -->
       <div class="card">
         <h3>Teacher Notes (Private)</h3>
         <div id="teacherNotesList"></div>
@@ -421,8 +427,8 @@
     <div id="grades" class="panel">
       <div class="card">
         <h3>📷 Import from Photo</h3>
-        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:12px">Upload a screenshot of your grades or report card — AI will read it automatically.</div>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--card2);transition:border-color .2s" id="gradesImgLabel">
+        <div style="font-size:.82rem;color:var(--muted2);margin-bottom:12px">Upload a screenshot of your grades or report card — AI reads it automatically.</div>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--border2);border-radius:12px;cursor:pointer;background:var(--card2)" id="gradesImgLabel">
           <span style="font-size:1.5rem">📷</span>
           <div><div style="font-size:.85rem;font-weight:600">Upload grades screenshot</div><div style="font-size:.72rem;color:var(--muted)">StudentConnect, report card, gradebook</div></div>
           <input type="file" accept="image/*" id="gradesImgInput" style="display:none" onchange="importGradesFromPhoto(event)">
@@ -583,10 +589,7 @@
         <div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Subject Budget (hrs/week)</div>
         <div id="subjectBudget"></div>
       </div>
-      <div class="card">
-        <h3>Weekly Focus Heatmap</h3>
-        <div id="focusHeatmap" style="display:flex;gap:4px;justify-content:space-between"></div>
-      </div>
+      <div class="card"><h3>Weekly Focus Heatmap</h3><div id="focusHeatmap" style="display:flex;gap:4px;justify-content:space-between"></div></div>
     </div>
 
     <!-- ─── PROFILE ─── -->
@@ -631,18 +634,9 @@
         </div>
         <div id="studyDNAResult" style="font-size:.82rem;color:var(--muted2)"></div>
       </div>
-      <div class="card">
-        <h3>Course Confidence</h3>
-        <div id="confidenceSliders"></div>
-        <button onclick="saveConfidences()" style="width:100%;margin-top:8px">Save</button>
-      </div>
-      <div class="card">
-        <h3>Academic Stats</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="profileStats"></div>
-      </div>
+      <div class="card"><h3>Course Confidence</h3><div id="confidenceSliders"></div><button onclick="saveConfidences()" style="width:100%;margin-top:8px">Save</button></div>
+      <div class="card"><h3>Academic Stats</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="profileStats"></div></div>
       <div class="card"><h3>Earned Badges</h3><div id="badgesDisplay"></div></div>
-
-      <!-- Canvas Connect -->
       <div class="card">
         <h3>Canvas LMS</h3>
         <div id="canvasStatus" style="margin-bottom:12px"></div>
@@ -656,7 +650,6 @@
         </div>
         <div style="font-size:.7rem;color:var(--muted);margin-top:8px;font-family:'JetBrains Mono',monospace">Account → Settings → Approved Integrations → New Access Token</div>
       </div>
-
     </div>
 
     <!-- ─── GOALS ─── -->
@@ -696,10 +689,7 @@
         <button onclick="addHabit()" style="width:100%;margin-top:4px">+ Add Habit</button>
       </div>
       <div id="habitList"></div>
-      <div class="card" id="heatmapCard" style="display:none">
-        <h3>Last 90 Days</h3>
-        <div id="heatmapGrid" style="overflow-x:auto"></div>
-      </div>
+      <div class="card" id="heatmapCard" style="display:none"><h3>Last 90 Days</h3><div id="heatmapGrid" style="overflow-x:auto"></div></div>
     </div>
 
     <!-- ─── MOOD ─── -->
@@ -721,15 +711,8 @@
         <button onclick="saveMoodEntry()" style="width:100%">Save Check-In</button>
         <div id="burnoutAlert" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:8px;font-size:.82rem;color:var(--red)">⚠️ Burnout warning: high stress + low sleep. Take it easy today.</div>
       </div>
-      <div class="card">
-        <h3>Mood History</h3>
-        <div id="moodHistory" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:8px" id="moodInsight"></div>
-      </div>
-      <div class="card">
-        <h3>Affirmation of the Day</h3>
-        <div id="affirmation" style="font-size:.92rem;font-style:italic;line-height:1.7;color:var(--muted2)"></div>
-      </div>
+      <div class="card"><h3>Mood History</h3><div id="moodHistory" style="display:flex;gap:4px;flex-wrap:wrap"></div><div style="font-size:.72rem;color:var(--muted);margin-top:8px" id="moodInsight"></div></div>
+      <div class="card"><h3>Affirmation of the Day</h3><div id="affirmation" style="font-size:.92rem;font-style:italic;line-height:1.7;color:var(--muted2)"></div></div>
       <div class="card">
         <h3>4-7-8 Breathing</h3>
         <div style="text-align:center;padding:16px 0">
@@ -743,10 +726,7 @@
     <div id="gmail" class="panel">
       <div class="card" style="padding:14px;margin-bottom:8px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-weight:800;font-size:1rem">📧 Gmail</div>
-            <div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">View school emails · Add to tasks</div>
-          </div>
+          <div><div style="font-weight:800;font-size:1rem">📧 Gmail</div><div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">View school emails · Add to tasks</div></div>
           <button onclick="loadGmail()" class="btn-sec" style="padding:7px 14px;font-size:.78rem">↻ Refresh</button>
         </div>
       </div>
@@ -859,10 +839,7 @@
             <button onclick="signOut()" class="btn-sec" style="width:100%;margin-top:8px;color:var(--red);border-color:var(--red)">Sign Out</button>
           </div>
         </div>
-        <div class="card">
-          <h3>No-HW Dates</h3>
-          <div id="noHWList" style="font-size:.75rem;color:var(--muted2);font-family:'JetBrains Mono',monospace;line-height:2.2"></div>
-        </div>
+        <div class="card"><h3>No-HW Dates</h3><div id="noHWList" style="font-size:.75rem;color:var(--muted2);font-family:'JetBrains Mono',monospace;line-height:2.2"></div></div>
       </div>
       <div class="spane" id="spane-data">
         <div class="card">
@@ -870,17 +847,8 @@
           <div class="srow"><div><div class="slabel">Export to iCal</div><div class="ssub">Download tasks as .ics</div></div><button onclick="exportToICal()" class="btn-sec" style="padding:6px 12px;font-size:.78rem">Export</button></div>
           <div class="srow" style="border:none"><div><div class="slabel">Export all data</div><div class="ssub">Download as JSON</div></div><button onclick="exportData()" class="btn-sec" style="padding:6px 12px;font-size:.78rem">Export</button></div>
         </div>
-        <div class="card">
-          <h3>Danger Zone</h3>
-          <div class="srow" style="border:none"><div><div class="slabel">Clear local cache</div></div><button onclick="clearCache()" class="btn-sec" style="padding:6px 12px;font-size:.78rem;color:var(--gold)">Clear</button></div>
-        </div>
-        <div class="card">
-          <h3>About</h3>
-          <div style="font-size:.78rem;color:var(--muted2);line-height:2.2;font-family:'JetBrains Mono',monospace">
-            <div>Flux IA East Planner v2.0</div><div>AI: Groq · Llama 3.3 70B</div>
-            <div>Auth: Supabase · g = 10 m/s²</div>
-          </div>
-        </div>
+        <div class="card"><h3>Danger Zone</h3><div class="srow" style="border:none"><div><div class="slabel">Clear local cache</div></div><button onclick="clearCache()" class="btn-sec" style="padding:6px 12px;font-size:.78rem;color:var(--gold)">Clear</button></div></div>
+        <div class="card"><h3>About</h3><div style="font-size:.78rem;color:var(--muted2);line-height:2.2;font-family:'JetBrains Mono',monospace"><div>Flux Planner v2.0</div><div>AI: Groq · Llama 3.3 70B · Gemini Vision</div><div>Auth: Supabase · g = 10 m/s²</div></div></div>
       </div>
     </div>
 
@@ -927,6 +895,8 @@
   </div>
 </div>
 
+<!-- Load scripts -->
+<script src="public/js/splash.js"></script>
 <script src="public/js/app.js"></script>
 </body>
 </html>
