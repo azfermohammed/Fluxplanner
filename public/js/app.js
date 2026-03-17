@@ -584,8 +584,6 @@ async function signInWithGoogle(){
       provider:'google',
       options:{
         redirectTo,
-        // Request Gmail read scope alongside default auth scopes
-        scopes:'openid email profile https://www.googleapis.com/auth/gmail.readonly',
         queryParams:{access_type:'offline',prompt:'select_account'}
       }
     });
