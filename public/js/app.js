@@ -187,6 +187,33 @@ function renderSidebars(){
   }
 }
 function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;save('flux_sidebar_collapsed',sidebarCollapsed);const sb=document.getElementById('sidebar');if(sb)sb.classList.toggle('collapsed',sidebarCollapsed);}
+
+// ── Sidebar resize (drag handle) ──
+function initSidebarResize(){
+  const handle=document.getElementById('sidebarResizeHandle');
+  const sidebar=document.getElementById('sidebar');
+  if(!handle||!sidebar)return;
+  let dragging=false,startX=0,startW=0;
+  const MIN_W=60,MAX_W=420;
+  handle.addEventListener('mousedown',e=>{
+    dragging=true;startX=e.clientX;startW=sidebar.offsetWidth;
+    document.body.style.cursor='col-resize';document.body.style.userSelect='none';e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const w=Math.min(MAX_W,Math.max(MIN_W,startW+(e.clientX-startX)));
+    sidebar.style.width=w+'px';sidebar.style.minWidth=w+'px';
+    if(w<90)sidebar.classList.add('collapsed');else sidebar.classList.remove('collapsed');
+    save('flux_sidebar_w',w);
+  });
+  document.addEventListener('mouseup',()=>{if(!dragging)return;dragging=false;document.body.style.cursor='';document.body.style.userSelect='';});
+  handle.addEventListener('touchstart',e=>{dragging=true;startX=e.touches[0].clientX;startW=sidebar.offsetWidth;e.preventDefault();},{passive:false});
+  document.addEventListener('touchmove',e=>{if(!dragging)return;const w=Math.min(MAX_W,Math.max(MIN_W,startW+(e.touches[0].clientX-startX)));sidebar.style.width=w+'px';sidebar.style.minWidth=w+'px';if(w<90)sidebar.classList.add('collapsed');else sidebar.classList.remove('collapsed');});
+  document.addEventListener('touchend',()=>{dragging=false;});
+  const savedW=load('flux_sidebar_w',null);
+  if(savedW&&!sidebarCollapsed){sidebar.style.width=savedW+'px';sidebar.style.minWidth=savedW+'px';}
+}
+
 function openDrawer(){
   // Detect which side the ☰ button is on and open drawer from that side
   const btn=document.getElementById('moreBtn')||document.querySelector('.mob-menu-btn');
@@ -363,13 +390,86 @@ function renderProfile(){const p=load('profile',{});const name=p.name||localStor
 function saveConfidences(){save('flux_conf',confidences);const b=event?.target;if(b){b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',1500);}}
 
 // ══ THEMES ══
-function themeDark(){document.body.className='';localStorage.setItem('flux_theme','dark');}
-function themeCrimson(){document.body.className='crimson';localStorage.setItem('flux_theme','crimson');}
-function themeFocus(){document.body.className='focus';localStorage.setItem('flux_theme','focus');}
-function themeSepia(){document.body.className='sepia';localStorage.setItem('flux_theme','sepia');}
-function setAccent(hex,rgb,el){document.documentElement.style.setProperty('--accent',hex);document.documentElement.style.setProperty('--accent-rgb',rgb);localStorage.setItem('flux_accent',hex);localStorage.setItem('flux_accent_rgb',rgb);document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));if(el)el.classList.add('active');}
-function applyCustomColor(){const hex=document.getElementById('customColor').value;const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);setAccent(hex,`${r},${g},${b}`,null);}
-function loadTheme(){const t=localStorage.getItem('flux_theme');if(t==='crimson')themeCrimson();else if(t==='focus')themeFocus();else if(t==='sepia')themeSepia();const a=localStorage.getItem('flux_accent'),r=localStorage.getItem('flux_accent_rgb');if(a)document.documentElement.style.setProperty('--accent',a);if(r)document.documentElement.style.setProperty('--accent-rgb',r);}
+const THEMES={
+  dark:{
+    label:'🌙 Midnight',
+    vars:{'--bg':'#0a0b10','--bg2':'#0d0e15','--card':'rgba(22,24,38,.85)','--card2':'rgba(26,29,44,.9)','--card-solid':'#161826','--border':'rgba(255,255,255,.07)','--border2':'rgba(255,255,255,.1)','--text':'#eef0f7','--muted':'#6b7280','--muted2':'#9ca3af'}
+  },
+  light:{
+    label:'☀️ Cloud',
+    vars:{'--bg':'#f0f2f8','--bg2':'#e8eaf2','--card':'rgba(255,255,255,.85)','--card2':'rgba(245,247,255,.9)','--card-solid':'#ffffff','--border':'rgba(0,0,0,.08)','--border2':'rgba(0,0,0,.12)','--text':'#1a1d2e','--muted':'#6b7280','--muted2':'#4b5563'}
+  },
+  aurora:{
+    label:'🌌 Aurora',
+    vars:{'--bg':'#060a12','--bg2':'#080d18','--card':'rgba(8,14,28,.88)','--card2':'rgba(10,18,35,.92)','--card-solid':'#08101e','--border':'rgba(100,200,255,.08)','--border2':'rgba(100,200,255,.13)','--text':'#e0f0ff','--muted':'#5a7a9a','--muted2':'#7a9aba','--accent':'#22d3ee','--accent-rgb':'34,211,238','--green':'#34d399','--purple':'#818cf8'}
+  },
+  ember:{
+    label:'🔥 Ember',
+    vars:{'--bg':'#0d0804','--bg2':'#120a05','--card':'rgba(28,16,8,.88)','--card2':'rgba(34,20,10,.92)','--card-solid':'#1c1008','--border':'rgba(255,120,40,.08)','--border2':'rgba(255,120,40,.13)','--text':'#fff4ec','--muted':'#8a5a3a','--muted2':'#b07a5a','--accent':'#f97316','--accent-rgb':'249,115,22','--green':'#fbbf24','--red':'#ef4444','--purple':'#fb923c'}
+  },
+  forest:{
+    label:'🌿 Forest',
+    vars:{'--bg':'#060d08','--bg2':'#080f0a','--card':'rgba(10,20,12,.88)','--card2':'rgba(12,24,15,.92)','--card-solid':'#0a140c','--border':'rgba(80,200,100,.08)','--border2':'rgba(80,200,100,.13)','--text':'#e8f5ea','--muted':'#4a7a52','--muted2':'#6a9a72','--accent':'#22c55e','--accent-rgb':'34,197,94','--green':'#4ade80','--purple':'#a3e635'}
+  },
+  rose:{
+    label:'🌸 Rose',
+    vars:{'--bg':'#0d0608','--bg2':'#120809','--card':'rgba(28,10,14,.88)','--card2':'rgba(35,12,18,.92)','--card-solid':'#1c0a0e','--border':'rgba(255,100,130,.08)','--border2':'rgba(255,100,130,.13)','--text':'#fff0f3','--muted':'#8a4a58','--muted2':'#b07080','--accent':'#f43f5e','--accent-rgb':'244,63,94','--green':'#fb7185','--purple':'#e879f9'}
+  },
+  ocean:{
+    label:'🌊 Deep Ocean',
+    vars:{'--bg':'#020810','--bg2':'#030a14','--card':'rgba(4,14,30,.9)','--card2':'rgba(5,18,38,.93)','--card-solid':'#04101e','--border':'rgba(30,100,200,.1)','--border2':'rgba(30,100,200,.16)','--text':'#dceeff','--muted':'#3a5a7a','--muted2':'#5a80a0','--accent':'#3b82f6','--accent-rgb':'59,130,246','--green':'#22d3ee','--purple':'#818cf8'}
+  },
+  candy:{
+    label:'🍬 Candy',
+    vars:{'--bg':'#0e0814','--bg2':'#120a18','--card':'rgba(20,12,30,.88)','--card2':'rgba(26,15,38,.92)','--card-solid':'#14101e','--border':'rgba(200,100,255,.08)','--border2':'rgba(200,100,255,.13)','--text':'#f5e8ff','--muted':'#7a4a9a','--muted2':'#a070c0','--accent':'#a855f7','--accent-rgb':'168,85,247','--green':'#f472b6','--purple':'#e879f9','--gold':'#fbbf24'}
+  },
+};
+
+function applyTheme(key){
+  const theme=THEMES[key];if(!theme)return;
+  const root=document.documentElement;
+  Object.entries(theme.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  // For light mode, also flip body class
+  document.body.setAttribute('data-theme',key);
+  localStorage.setItem('flux_theme',key);
+  localStorage.setItem('flux_theme_vars',JSON.stringify(theme.vars));
+}
+function themeDark(){applyTheme('dark');}
+function themeCrimson(){applyTheme('ember');} // remap old calls
+function themeFocus(){applyTheme('forest');}
+function themeSepia(){applyTheme('rose');}
+
+function loadTheme(){
+  const key=localStorage.getItem('flux_theme')||'dark';
+  if(THEMES[key])applyTheme(key);
+  // Apply any saved custom overrides
+  const custom=load('flux_custom_colors',{});
+  Object.entries(custom).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+}
+
+// Advanced color customizer — per-variable overrides
+function applyCustomVar(varName,value){
+  document.documentElement.style.setProperty(varName,value);
+  const custom=load('flux_custom_colors',{});
+  custom[varName]=value;
+  save('flux_custom_colors',custom);
+}
+function resetCustomColors(){
+  save('flux_custom_colors',{});
+  loadTheme();
+  const b=event?.target;if(b){b.textContent='✓ Reset!';setTimeout(()=>b.textContent='↺ Reset colors',1500);}
+}
+function setAccent(hex,rgb,el){
+  applyCustomVar('--accent',hex);
+  applyCustomVar('--accent-rgb',rgb);
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+  if(el)el.classList.add('active');
+}
+function applyCustomColor(){
+  const hex=document.getElementById('customColor').value;
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  setAccent(hex,`${r},${g},${b}`,null);
+}
 
 // ══ SETTINGS ══
 function switchStab(id,el){document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.spane').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('spane-'+id).classList.add('active');}
@@ -382,19 +482,41 @@ function renderNoHWList(){const el=document.getElementById('noHWList');if(!el)re
 function renderTabCustomizer(){
   const el=document.getElementById('tabCustomizerList');if(!el)return;
   el.innerHTML=tabConfig.map((t,i)=>`
-    <div class="tab-row" draggable="true" data-idx="${i}" ondragstart="tcDragStart(event,${i})" ondragover="tcDragOver(event)" ondrop="tcDrop(event,${i})">
-      <span class="tab-drag-handle">⠿</span>
+    <div class="tab-row" draggable="true" data-idx="${i}"
+      ondragstart="tcDragStart(event,${i})"
+      ondragover="tcDragOver(event,${i})"
+      ondragleave="tcDragLeave(event)"
+      ondrop="tcDrop(event,${i})"
+      ondragend="tcDragEnd(event)">
+      <span class="tab-drag-handle" title="Drag to reorder">⠿</span>
       <span class="tab-row-icon">${t.icon}</span>
       <span class="tab-row-name">${t.label}</span>
       <button class="tab-row-toggle ${t.visible?'on':''}" onclick="tcToggle(${i})" title="${t.visible?'Hide':'Show'}"></button>
     </div>`).join('');
 }
 let tcDragIdx=null;
-function tcDragStart(e,i){tcDragIdx=i;e.currentTarget.classList.add('dragging');}
-function tcDragOver(e){e.preventDefault();}
+function tcDragStart(e,i){
+  tcDragIdx=i;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(i));
+  setTimeout(()=>e.currentTarget.style.opacity='.4',0);
+}
+function tcDragOver(e,i){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  // Highlight drop target
+  document.querySelectorAll('.tab-row').forEach(r=>r.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function tcDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function tcDragEnd(e){
+  e.currentTarget.style.opacity='';
+  document.querySelectorAll('.tab-row').forEach(r=>{r.classList.remove('drag-over');r.style.opacity='';});
+}
 function tcDrop(e,i){
   e.preventDefault();
-  if(tcDragIdx===null||tcDragIdx===i)return;
+  document.querySelectorAll('.tab-row').forEach(r=>r.classList.remove('drag-over'));
+  if(tcDragIdx===null||tcDragIdx===i){tcDragIdx=null;return;}
   const moved=tabConfig.splice(tcDragIdx,1)[0];
   tabConfig.splice(i,0,moved);
   tcDragIdx=null;
@@ -689,6 +811,7 @@ async function signInWithGoogle(){
       provider:'google',
       options:{
         redirectTo,
+        scopes:'https://www.googleapis.com/auth/gmail.readonly',
         queryParams:{access_type:'offline',prompt:'select_account'}
       }
     });
@@ -879,6 +1002,7 @@ function initFeaturePills(){
   checkAllPanic();setInterval(checkAllPanic,60000);
   initFeaturePills();
   renderSidebars();
+  initSidebarResize();
 
   // ── FLOW: Splash (once per session) → Login → (1st time) Onboarding → App ──
   const afterSplash = () => initAuth();
