@@ -1,12 +1,28 @@
 /* ── FLUX PLANNER · app.js v2 ── */
 
 // ══ CONSTANTS ══
-const SUBJECTS={LIT:{name:'Am. Lit',short:'LIT',color:'#6366f1'},AME:{name:'Am. Studies',short:'AME',color:'#f43f5e'},PP:{name:'Personal Project',short:'PP',color:'#10d9a0'},CHE:{name:'Chemistry',short:'CHE',color:'#fbbf24'},FRE:{name:'French',short:'FRE',color:'#3b82f6'},ORC:{name:'Orchestra',short:'ORC',color:'#c084fc'},PHY:{name:'Physics',short:'PHY',color:'#fb923c'},MTH:{name:'Math 3',short:'MTH',color:'#e879f9'},GYM:{name:'Gym',short:'GYM',color:'#10d9a0'}};
-const noHomeworkDays=["2025-09-01","2025-09-26","2025-09-27","2025-09-28","2025-10-17","2025-10-18","2025-10-19","2025-11-05","2025-11-26","2025-11-27","2025-11-28","2025-11-29","2025-12-20","2025-12-21","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-27","2025-12-28","2025-12-29","2025-12-30","2025-12-31","2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026-01-19","2026-02-13","2026-02-14","2026-02-15","2026-02-16","2026-02-17","2026-03-27","2026-03-28","2026-03-29","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-05-25","2026-05-26","2026-05-27"];
+// ══ SUBJECTS — built dynamically from user's classes ══
+// No hardcoded subjects. Colors auto-assigned.
+const SUBJECT_COLORS=['#6366f1','#f43f5e','#10d9a0','#fbbf24','#3b82f6','#c084fc','#fb923c','#e879f9','#22d3ee','#4ade80','#f472b6','#a78bfa'];
+function getSubjects(){
+  // Build from user's saved classes
+  const subjs={};
+  classes.forEach((c,i)=>{
+    if(!c.name)return;
+    const key=c.name.slice(0,6).toUpperCase().replace(/\s/g,'');
+    subjs[key]={name:c.name,short:c.name.length>8?c.name.slice(0,3).toUpperCase():c.name,color:SUBJECT_COLORS[i%SUBJECT_COLORS.length]};
+  });
+  return subjs;
+}
+// SUBJECTS is a live getter — always reflects current classes
+function SUBJECTS_GET(){return getSubjects();}
+// Compat shim — returns current subjects object
+const SUBJECTS=new Proxy({},{get:(_,k)=>getSubjects()[k],ownKeys:()=>Object.keys(getSubjects()),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+const noHomeworkDays=load('flux_no_hw_days',[]);
 const AFFIRMATIONS=["You are capable of amazing things.","Every expert was once a beginner.","Progress, not perfection.","Hard work compounds. Keep going.","Your future self is grateful for today's effort.","Difficult roads lead to beautiful destinations.","You've got this, one step at a time.","Consistency beats intensity. Show up today.","Your potential is limitless.","Rest is part of the process too."];
 const PANEL_TITLES={dashboard:'Dashboard',calendar:'Calendar',school:'School Info',grades:'Grades',notes:'Notes',timer:'Focus Timer',profile:'Profile',goals:'Goals',habits:'Habits',mood:'Mood',ai:'Flux AI',gmail:'Gmail',settings:'Settings'};
 
-function buildABMap(){const m={};let t=true;for(let d=new Date('2025-08-25');d<=new Date('2026-06-12');d.setDate(d.getDate()+1)){const dw=d.getDay();if(dw===0||dw===6)continue;m[d.toISOString().slice(0,10)]=t?'A':'B';t=!t;}return m;}
+function buildABMap(){return load('flux_ab_map',{});}
 const AB_MAP=buildABMap();
 const TODAY=new Date();
 
@@ -154,6 +170,19 @@ function nav(id,btn){
 function navMob(id){closeDrawer();nav(id);}
 
 // ══ SIDEBAR ══
+// ── Populate subject dropdowns dynamically from user's classes ──
+function populateSubjectSelects(){
+  const subjs=getSubjects();
+  const opts='<option value="">No subject</option>'+Object.entries(subjs).map(([k,s])=>`<option value="${k}">${s.name}</option>`).join('');
+  ['taskSubject','editSubject','noteSubjectTag','timerSubject','addEventSubject'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const cur=el.value;
+    el.innerHTML=opts;
+    if(cur)el.value=cur;
+  });
+}
+
 function renderSidebars(){
   const groups=[
     {label:'Main',ids:['dashboard','calendar','ai']},
@@ -413,8 +442,8 @@ function addGCalEventAsTask(encodedName,date){
 
 // ══ SCHOOL INFO ══
 function saveSchoolInfo(){schoolInfo={locker:document.getElementById('inputLocker').value.trim(),combo:document.getElementById('inputCombo').value.trim(),counselor:document.getElementById('inputCounselor').value.trim(),studentID:document.getElementById('inputStudentID').value.trim()};save('flux_school',schoolInfo);renderSchool();syncKey('school',schoolInfo);const b=event?.target;if(b){b.textContent='✓ Saved!';setTimeout(()=>b.textContent='Save Info',1500);}}
-function addClass(){const period=document.getElementById('classPeriod').value,name=document.getElementById('className').value.trim(),teacher=document.getElementById('classTeacher').value.trim(),room=document.getElementById('classRoom').value.trim();if(!name)return;classes.push({id:Date.now(),period:parseInt(period)||classes.length+1,name,teacher,room});classes.sort((a,b)=>a.period-b.period);save('flux_classes',classes);document.getElementById('classPeriod').value='';document.getElementById('className').value='';document.getElementById('classTeacher').value='';document.getElementById('classRoom').value='';renderSchool();syncKey('classes',classes);}
-function deleteClass(id){classes=classes.filter(c=>c.id!==id);save('flux_classes',classes);renderSchool();}
+function addClass(){const period=document.getElementById('classPeriod').value,name=document.getElementById('className').value.trim(),teacher=document.getElementById('classTeacher').value.trim(),room=document.getElementById('classRoom').value.trim();if(!name)return;classes.push({id:Date.now(),period:parseInt(period)||classes.length+1,name,teacher,room});classes.sort((a,b)=>a.period-b.period);save('flux_classes',classes);document.getElementById('classPeriod').value='';document.getElementById('className').value='';document.getElementById('classTeacher').value='';document.getElementById('classRoom').value='';renderSchool();populateSubjectSelects();syncKey('classes',classes);}
+function deleteClass(id){classes=classes.filter(c=>c.id!==id);save('flux_classes',classes);renderSchool();populateSubjectSelects();}
 function addTeacherNote(){const teacher=document.getElementById('tNoteTeacher').value.trim(),note=document.getElementById('tNoteText').value.trim();if(!teacher||!note)return;teacherNotes.push({id:Date.now(),teacher,note});save('flux_teacher_notes',teacherNotes);document.getElementById('tNoteTeacher').value='';document.getElementById('tNoteText').value='';renderSchool();}
 function deleteTeacherNote(id){teacherNotes=teacherNotes.filter(n=>n.id!==id);save('flux_teacher_notes',teacherNotes);renderSchool();}
 function renderSchool(){
@@ -513,16 +542,154 @@ function timerDone(){tRunning=false;clearInterval(tInterval);document.getElement
 function updateTDisplay(){const m=Math.floor(tSecs/60),s=tSecs%60;document.getElementById('tDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');const offset=CIRC*(1-tSecs/tTotal);const ring=document.getElementById('timerRing');if(ring){ring.style.strokeDasharray=CIRC;ring.style.strokeDashoffset=offset;}}
 function renderTDots(){const el=document.getElementById('timerDots');if(!el)return;const c=Math.min((tDone%4)||(tDone>0?4:0),4);el.innerHTML=[0,1,2,3].map(i=>`<div class="t-dot ${i<c?'done':''}"></div>`).join('');const lbl=document.getElementById('tSessionLbl');if(lbl)lbl.textContent=`Session ${(tDone%4)+1} of 4`;}
 function updateTStats(){const a=document.getElementById('tSessions'),b=document.getElementById('tMinutes'),c=document.getElementById('tStreak');if(a)a.textContent=tDone;if(b)b.textContent=tMins;if(c)c.textContent=tStreak;}
-function renderSubjectBudget(){const el=document.getElementById('subjectBudget');if(!el)return;const targets={LIT:3,CHE:4,PHY:4,MTH:4,FRE:2,AME:3,PP:2};el.innerHTML=Object.entries(SUBJECTS).filter(([k])=>targets[k]).map(([k,s])=>{const done=parseFloat((subjectBudgets[k]||0).toFixed(1));const target=targets[k];const pct=Math.min(Math.round(done/target*100),100);const c=pct>=100?'var(--green)':pct>=60?'var(--accent)':'var(--gold)';return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:.8rem;font-weight:600">${s.short}</span></div><span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:${c}">${done} / ${target}h</span></div><div class="budget-bar"><div class="budget-fill" style="width:${pct}%;background:${s.color}"></div></div></div>`;}).join('');}
+function renderSubjectBudget(){
+  const el=document.getElementById('subjectBudget');if(!el)return;
+  const subjs=getSubjects();
+  const entries=Object.entries(subjs);
+  if(!entries.length){el.innerHTML='<div style="color:var(--muted);font-size:.82rem">Add classes in School Info to see subject budgets.</div>';return;}
+  el.innerHTML=entries.map(([k,s])=>{
+    const done=parseFloat((subjectBudgets[k]||0).toFixed(1));
+    const target=2; // default 2h/week per subject
+    const pct=Math.min(Math.round(done/target*100),100);
+    const c=pct>=100?'var(--green)':pct>=60?'var(--accent)':'var(--gold)';
+    return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:.8rem;font-weight:600">${s.short}</span></div><span style="font-size:.72rem;font-family:'JetBrains Mono',monospace;color:${c}">${done} / ${target}h</span></div><div class="budget-bar"><div class="budget-fill" style="width:${pct}%;background:${s.color}"></div></div></div>`;
+  }).join('');
+}
 function renderFocusHeatmap(){const el=document.getElementById('focusHeatmap');if(!el)return;const weekStart=new Date(TODAY);weekStart.setDate(TODAY.getDate()-TODAY.getDay()+1);const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];el.innerHTML=days.map((day,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);const ds=d.toISOString().slice(0,10);const mins=sessionLog.filter(s=>s.date===ds).reduce((sum,s)=>sum+s.mins,0);const intensity=Math.min(mins/120,1);const isToday=ds===todayStr();return`<div style="flex:1;text-align:center"><div style="height:40px;border-radius:8px;background:rgba(var(--accent-rgb),${intensity.toFixed(2)});border:1px solid ${isToday?'var(--accent)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:700">${mins>0?mins+'m':''}</div><div style="font-size:.58rem;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace">${day}</div></div>`;}).join('');}
 function playAmbient(type,btn){stopAmbient();document.querySelectorAll('#timer .tmode-btn').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');try{ambientCtx=new(window.AudioContext||window.webkitAudioContext)();const buf=ambientCtx.createBuffer(1,ambientCtx.sampleRate*2,ambientCtx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(type==='white'?0.15:0.08);const src=ambientCtx.createBufferSource();src.buffer=buf;src.loop=true;const g=ambientCtx.createGain();g.gain.value=0.4;if(type==='rain'){const f=ambientCtx.createBiquadFilter();f.type='bandpass';f.frequency.value=1200;src.connect(f);f.connect(g);}else src.connect(g);g.connect(ambientCtx.destination);src.start();}catch(e){}}
 function stopAmbient(){if(ambientCtx){try{ambientCtx.close();}catch(e){}ambientCtx=null;}document.querySelectorAll('#timer .card .tmode-btn').forEach(b=>b.classList.remove('active'));}
 
 // ══ PROFILE ══
-function saveProfile(){const p={name:document.getElementById('name').value,grade:document.getElementById('grade').value,track:document.getElementById('track').value};localStorage.setItem('profile',JSON.stringify(p));localStorage.setItem('flux_user_name',p.name);renderProfile();syncKey('profile',p);const b=event?.target;if(b){b.textContent='✓ Saved!';setTimeout(()=>b.textContent='Save Profile',1500);}}
+function saveProfile(){
+  const p={
+    name:document.getElementById('name').value.trim(),
+    grade:document.getElementById('grade').value,
+    program:document.getElementById('program').value,
+    school:document.getElementById('profileSchool').value.trim(),
+  };
+  localStorage.setItem('profile',JSON.stringify(p));
+  localStorage.setItem('flux_user_name',p.name);
+  checkProgramUpgrade(p);
+  renderProfile();
+  syncKey('profile',p);
+  const b=event?.target;if(b){b.textContent='✓ Saved!';setTimeout(()=>b.textContent='Save Profile',1500);}
+}
+
+// Auto-upgrade MYP → DP when grade reaches 11
+function checkProgramUpgrade(p){
+  if(!p)return;
+  const grade=parseInt(p.grade)||0;
+  const prog=p.program||'';
+  if(grade>=11&&prog==='IB MYP'){
+    p.program='IB DP';
+    localStorage.setItem('profile',JSON.stringify(p));
+    // Show upgrade notification
+    const notif=document.createElement('div');
+    notif.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;padding:14px 24px;border-radius:14px;font-size:.88rem;font-weight:700;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:floatIn .3s ease';
+    notif.innerHTML='🎓 Welcome to IB DP! Your program has been updated.';
+    document.body.appendChild(notif);
+    setTimeout(()=>notif.remove(),4000);
+    save('flux_onboarded',true);
+  }
+}
+
+function renderProfile(){
+  const p=load('profile',{});
+  const name=p.name||localStorage.getItem('flux_user_name')||'Student';
+  const grade=p.grade||'';
+  const program=p.program||'';
+  const school=p.school||'';
+
+  // Auto-check upgrade on render
+  if(p.grade)checkProgramUpgrade(p);
+
+  const subline=[grade?`Grade ${grade}`:'',program,school].filter(Boolean).join(' · ');
+  const profileNameEl=document.getElementById('profileName');if(profileNameEl)profileNameEl.textContent=name;
+  const profileSubEl=document.getElementById('profileSubline');if(profileSubEl)profileSubEl.textContent=subline||'Set up your profile';
+
+  if(p.name){
+    const nameEl=document.getElementById('name');if(nameEl)nameEl.value=p.name;
+    const gradeEl=document.getElementById('grade');if(gradeEl)gradeEl.value=p.grade||'';
+    const progEl=document.getElementById('program');if(progEl)progEl.value=p.program||'';
+    const schoolEl=document.getElementById('profileSchool');if(schoolEl)schoolEl.value=p.school||'';
+  }
+
+  const pic=localStorage.getItem('flux_profile_pic');
+  const av=document.getElementById('pAvatar');
+  if(av)av.innerHTML=(pic?`<img src="${pic}">`:name.charAt(0).toUpperCase())+`<input type="file" id="picUpload" accept="image/*" style="display:none" onchange="handlePicUpload(event)">`;
+
+  const gpa=calcGPA(grades);
+  const done=tasks.filter(t=>t.done).length;
+  const badges=[];
+  if(gpa!==null&&gpa>=3.7)badges.push({t:'🏆 Honor Roll',c:'badge-gold'});
+  if(done>=20)badges.push({t:'✓ Task Master',c:'badge-green'});
+  if(tStreak>=7)badges.push({t:'🔥 Study Streak',c:'badge-red'});
+  if(program==='IB DP')badges.push({t:'📚 IB DP',c:'badge-blue'});
+  if(program==='IB MYP')badges.push({t:'📖 IB MYP',c:'badge-purple'});
+  if(notes.length>=10)badges.push({t:'📝 Note Taker',c:'badge-purple'});
+  const badgeEl=document.getElementById('profileBadges');
+  if(badgeEl)badgeEl.innerHTML=badges.length?badges.map(b=>`<span class="badge ${b.c}">${b.t}</span>`).join(''):'<span style="font-size:.75rem;color:var(--muted)">Complete tasks to earn badges!</span>';
+
+  const ps=document.getElementById('profileStats');
+  if(ps)ps.innerHTML=[[gpa!==null?precise(gpa):'—','GPA (4dp)','var(--accent)'],[done,'Done','var(--green)'],[tasks.filter(t=>!t.done).length,'Active','var(--gold)'],[notes.length,'Notes','var(--purple)']].map(([n,l,c])=>`<div style="background:var(--card2);border-radius:10px;padding:12px"><div style="font-size:1.4rem;font-weight:800;color:${c}">${n}</div><div style="font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:2px">${l}</div></div>`).join('');
+
+  // Program tracker
+  renderProgramTracker(p);
+
+  // Confidence sliders — now use dynamic subjects from user's classes
+  const confEl=document.getElementById('confidenceSliders');
+  const subjs=getSubjects();
+  if(confEl){
+    const subjEntries=Object.entries(subjs);
+    if(!subjEntries.length){confEl.innerHTML='<div style="color:var(--muted);font-size:.82rem">Add your classes in School Info to see confidence sliders.</div>';return;}
+    confEl.innerHTML=subjEntries.map(([k,s])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:.82rem;font-weight:600">${s.short}</span></div><span style="font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700" id="cv-${k}">${confidences[k]||5}/10</span></div><input type="range" min="1" max="10" value="${confidences[k]||5}" oninput="document.getElementById('cv-${k}').textContent=this.value+'/10';confidences['${k}']=parseInt(this.value)" style="width:100%"></div>`).join('');
+  }
+
+  studyDNA.forEach(d=>{const btn=document.getElementById('dna-'+d);if(btn)btn.classList.add('active');});
+  renderCanvasStatus();
+}
+
+function renderProgramTracker(p){
+  const el=document.getElementById('programTracker');if(!el)return;
+  const grade=parseInt(p?.grade)||0;
+  const program=p?.program||'';
+  const isIB=program.includes('IB');
+  if(!isIB){el.style.display='none';return;}
+  el.style.display='block';
+  const isDP=program==='IB DP';
+  const isMYP=program==='IB MYP';
+  // MYP: grades 6-10 | DP: grades 11-12
+  const dpItems=[
+    {key:'tok',label:'Theory of Knowledge',desc:'TOK Essay + Exhibition',done:load('flux_pt_tok',false)},
+    {key:'ee',label:'Extended Essay',desc:'4000-word independent research',done:load('flux_pt_ee',false)},
+    {key:'cas',label:'CAS',desc:'Creativity, Activity, Service',done:load('flux_pt_cas',false)},
+  ];
+  const mypItems=[
+    {key:'pp',label:'Personal Project',desc:'Self-directed project (Grade 10)',done:load('flux_pt_pp',false)},
+    {key:'comm',label:'Community Project',desc:'Community service (Grade 9)',done:load('flux_pt_comm',false)},
+  ];
+  const items=isDP?dpItems:mypItems;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-size:.88rem;font-weight:700">${program} Progress Tracker</div>
+        <div style="font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">Grade ${grade||'?'} · ${isDP?'Diploma Programme':'Middle Years Programme'}</div>
+      </div>
+      ${isMYP&&grade>=10?`<div style="font-size:.72rem;padding:4px 10px;background:rgba(var(--accent-rgb),.12);border:1px solid rgba(var(--accent-rgb),.25);border-radius:10px;color:var(--accent)">→ DP eligible at Grade 11</div>`:''}
+    </div>
+    ${items.map(item=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <button onclick="togglePT('${item.key}')" style="width:22px;height:22px;border-radius:7px;padding:0;flex-shrink:0;background:${item.done?'var(--green)':'transparent'};border:2px solid ${item.done?'var(--green)':'var(--border2)'};color:#080a0f;font-size:11px">${item.done?'✓':''}</button>
+        <div style="flex:1"><div style="font-size:.87rem;font-weight:600;${item.done?'text-decoration:line-through;opacity:.6':''}">${item.label}</div><div style="font-size:.7rem;color:var(--muted)">${item.desc}</div></div>
+      </div>`).join('')}`;
+}
+function togglePT(key){
+  const current=load('flux_pt_'+key,false);
+  save('flux_pt_'+key,!current);
+  renderProfile();
+}
 function handlePicUpload(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{localStorage.setItem('flux_profile_pic',ev.target.result);const av=document.getElementById('pAvatar');if(av)av.innerHTML=`<img src="${ev.target.result}"><input type="file" id="picUpload" accept="image/*" style="display:none" onchange="handlePicUpload(event)">`;};r.readAsDataURL(file);}
 function setDNA(type){const idx=studyDNA.indexOf(type);if(idx>=0)studyDNA.splice(idx,1);else studyDNA.push(type);save('flux_dna',studyDNA);document.querySelectorAll('[id^=dna-]').forEach(b=>b.classList.remove('active'));studyDNA.forEach(d=>{const btn=document.getElementById('dna-'+d);if(btn)btn.classList.add('active');});const tips={visual:'Use diagrams, charts, color-coded notes.',audio:'Read aloud, record yourself, use podcasts.',reading:'Textbooks, detailed notes, rewrite summaries.',practice:'Do problems, flashcards, practice tests.'};const el=document.getElementById('studyDNAResult');if(el)el.textContent=studyDNA.map(d=>tips[d]).join(' ');}
-function renderProfile(){const p=load('profile',{});const name=p.name||localStorage.getItem('flux_user_name')||'Student';const grade=p.grade||'10';const track=p.track||'Pre-IB / MYP';document.getElementById('profileName').textContent=name;document.getElementById('profileSubline').textContent=`Grade ${grade} · ${track}`;if(p.name){document.getElementById('name').value=p.name;document.getElementById('grade').value=p.grade||'10';document.getElementById('track').value=p.track||'Pre-IB / MYP';}const pic=localStorage.getItem('flux_profile_pic');const av=document.getElementById('pAvatar');if(av)av.innerHTML=(pic?`<img src="${pic}">`:name.charAt(0).toUpperCase())+`<input type="file" id="picUpload" accept="image/*" style="display:none" onchange="handlePicUpload(event)">`;const gpa=calcGPA(grades);const done=tasks.filter(t=>t.done).length;const badges=[];if(gpa!==null&&gpa>=3.7)badges.push({t:'🏆 Honor Roll',c:'badge-gold'});if(done>=20)badges.push({t:'✓ Task Master',c:'badge-green'});if(tStreak>=7)badges.push({t:'🔥 Study Streak',c:'badge-red'});if(track.toLowerCase().includes('ib diploma'))badges.push({t:'📚 IB Diploma',c:'badge-blue'});if(notes.length>=10)badges.push({t:'📝 Note Taker',c:'badge-purple'});const badgeEl=document.getElementById('profileBadges');if(badgeEl)badgeEl.innerHTML=badges.length?badges.map(b=>`<span class="badge ${b.c}">${b.t}</span>`).join(''):'<span style="font-size:.75rem;color:var(--muted)">Complete tasks to earn badges!</span>';const ps=document.getElementById('profileStats');if(ps)ps.innerHTML=[[gpa!==null?precise(gpa):'—','GPA (4dp)','var(--accent)'],[done,'Done','var(--green)'],[tasks.filter(t=>!t.done).length,'Active','var(--gold)'],[notes.length,'Notes','var(--purple)']].map(([n,l,c])=>`<div style="background:var(--card2);border-radius:10px;padding:12px"><div style="font-size:1.4rem;font-weight:800;color:${c}">${n}</div><div style="font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:2px">${l}</div></div>`).join('');const confEl=document.getElementById('confidenceSliders');if(confEl)confEl.innerHTML=Object.entries(SUBJECTS).map(([k,s])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:${s.color}"></div><span style="font-size:.82rem;font-weight:600">${s.short}</span></div><span style="font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700" id="cv-${k}">${confidences[k]||5}/10</span></div><input type="range" min="1" max="10" value="${confidences[k]||5}" oninput="document.getElementById('cv-${k}').textContent=this.value+'/10';confidences['${k}']=parseInt(this.value)" style="width:100%"></div>`).join('');studyDNA.forEach(d=>{const btn=document.getElementById('dna-'+d);if(btn)btn.classList.add('active');});renderCanvasStatus();}
 function saveConfidences(){save('flux_conf',confidences);const b=event?.target;if(b){b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',1500);}}
 
 // ══ THEMES ══
@@ -614,7 +781,23 @@ function toggleSetting(k,el){settings[k]=!settings[k];el.classList.toggle('on',s
 function saveDND(){settings.dndStart=document.getElementById('dndStart').value;settings.dndEnd=document.getElementById('dndEnd').value;save('flux_settings',settings);const b=event?.target;if(b){b.textContent='✓';setTimeout(()=>b.textContent='Save',1500);}}
 function saveDailyGoal(){settings.dailyGoalHrs=parseFloat(document.getElementById('dailyGoalHrs').value)||2;save('flux_settings',settings);const done=tMins/60,goal=settings.dailyGoalHrs;const el=document.getElementById('dailyGoalStatus');if(el)el.textContent=done>=goal?`✓ Goal reached! (${done.toFixed(1)}h / ${goal}h)`:`Progress: ${done.toFixed(1)}h / ${goal}h`;}
 function loadSettingsUI(){const pt=document.getElementById('panicToggle');if(pt)pt.classList.toggle('on',settings.panic!==false);const qt=document.getElementById('quietToggle');if(qt)qt.classList.toggle('on',settings.quiet!==false);const ds=document.getElementById('dndStart');if(ds)ds.value=settings.dndStart||'07:50';const de=document.getElementById('dndEnd');if(de)de.value=settings.dndEnd||'14:30';const dg=document.getElementById('dailyGoalHrs');if(dg)dg.value=settings.dailyGoalHrs||2;}
-function renderNoHWList(){const el=document.getElementById('noHWList');if(!el)return;const sorted=[...noHomeworkDays].sort();const groups=[];let rs=null,rp=null;const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});sorted.forEach(d=>{if(!rs){rs=d;rp=d;}else{const prev=new Date(rp+'T12:00:00');prev.setDate(prev.getDate()+1);if(prev.toISOString().slice(0,10)===d)rp=d;else{groups.push(rs===rp?fmt(rs):fmt(rs)+' – '+fmt(rp));rs=d;rp=d;}}});if(rs)groups.push(rs===rp?fmt(rs):fmt(rs)+' – '+fmt(rp));el.innerHTML=groups.map(g=>`<div>📵 ${g}</div>`).join('');}
+function renderNoHWList(){
+  const el=document.getElementById('noHWList');if(!el)return;
+  const days=load('flux_no_hw_days',[]);
+  if(!days.length){el.innerHTML='<div style="color:var(--muted);font-size:.78rem">No days added yet.</div>';return;}
+  const sorted=[...days].sort();
+  el.innerHTML=sorted.map(d=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span>📵 ${new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span><button onclick="removeNoHWDay('${d}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:2px 6px">✕</button></div>`).join('');
+}
+function addNoHWDay(){
+  const inp=document.getElementById('noHWInput');if(!inp||!inp.value)return;
+  const days=load('flux_no_hw_days',[]);
+  if(!days.includes(inp.value))days.push(inp.value);
+  save('flux_no_hw_days',days);inp.value='';renderNoHWList();
+}
+function removeNoHWDay(d){
+  const days=load('flux_no_hw_days',[]).filter(x=>x!==d);
+  save('flux_no_hw_days',days);renderNoHWList();
+}
 
 function renderTabCustomizer(){
   const el=document.getElementById('tabCustomizerList');if(!el)return;
@@ -682,26 +865,53 @@ function clearCache(){if(!confirm('Clear all local data?'))return;const keep=['f
 // ══ AI ══
 function fmtAI(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/^### (.+)$/gm,'<strong style="display:block;margin-top:8px;margin-bottom:2px">$1</strong>').replace(/^- (.+)$/gm,'<li style="margin-left:14px;margin-bottom:3px">$1</li>').replace(/Q:\s*(.+)/g,'<strong style="color:var(--accent)">Q:</strong> $1').replace(/A:\s*(.+)/g,'<strong style="color:var(--green)">A:</strong> $1').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');}
 function appendMsg(role,content,isThink){const wrap=document.getElementById('aiMsgs');if(!wrap)return document.createElement('div');const div=document.createElement('div');div.className='ai-msg '+role;const isBot=role==='bot';if(isThink){div.id='aiThink';div.innerHTML='<div class="ai-av bot">✦</div><div class="ai-bub bot"><div class="ai-think"><span></span><span></span><span></span></div></div>';}else{const f=isBot?fmtAI(content):esc(content);const init=(localStorage.getItem('flux_user_name')||'U').charAt(0).toUpperCase();div.innerHTML=`<div class="ai-av ${isBot?'bot':'me'}">${isBot?'✦':init}</div><div class="ai-bub ${isBot?'bot':'user'}">${f}</div>`;}wrap.appendChild(div);div.scrollIntoView({behavior:'smooth',block:'end'});return div;}
-function renderAISugs(){const el=document.getElementById('aiSugs');if(!el)return;el.innerHTML='';["What's due this week?","Make me a study plan","Create Chemistry flashcards","Explain this Physics concept","Help with my essay outline","Quiz me on Math 3","What should I work on now?","Generate a 3-day exam prep plan"].forEach(s=>{const btn=document.createElement('button');btn.className='ai-sug';btn.textContent=s;btn.onclick=()=>{document.getElementById('aiInput').value=s;sendAI();};el.appendChild(btn);});}
+function renderAISugs(){const el=document.getElementById('aiSugs');if(!el)return;el.innerHTML='';const sugs=["What's due this week?","Make me a study plan","Create flashcards for my next test","Help with my essay outline","What should I work on now?","Generate a 3-day exam prep plan","Quiz me on my hardest subject","Summarize what I have coming up"];sugs.forEach(s=>{const btn=document.createElement('button');btn.className='ai-sug';btn.textContent=s;btn.onclick=()=>{document.getElementById('aiInput').value=s;sendAI();};el.appendChild(btn);});}
 function handleAIImg(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{aiPendingImg={data:e.target.result.split(',')[1],mime:file.type,name:file.name};const prev=document.getElementById('aiImgPreview');if(prev){prev.style.display='block';prev.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.2);border-radius:8px"><img src="${e.target.result}" style="width:44px;height:44px;object-fit:cover;border-radius:6px"><div style="flex:1;font-size:.78rem;font-weight:600">${file.name}</div><button onclick="aiPendingImg=null;this.parentElement.parentElement.style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0">✕</button></div>`;}};reader.readAsDataURL(file);}
-function buildAIPrompt(){const ctx=refreshAIContext();const name=localStorage.getItem('flux_user_name')||'Student';const now=new Date();now.setHours(0,0,0,0);const ab=AB_MAP[todayStr()];const gpa=calcGPA(grades);const mood=moodHistory.slice(-1)[0];const fmt=t=>{const due=t.date?new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'no date';const over=t.date&&new Date(t.date+'T00:00:00')<now?' OVERDUE':'';const np=t.date&&isBreak(t.date)?' [NO-HW]':'';const s=SUBJECTS[t.subject];return`- [${(t.priority||'med').toUpperCase()}|${s?s.short:t.subject||'—'}|${t.type||'hw'}|Due ${due}${over}${np}]: ${t.name}`;};return`You are Flux AI — a brilliant, warm AI tutor and planner assistant.
-Student: ${name} · Today: ${TODAY.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})} · ${ab||'?'} Day
+function buildAIPrompt(){
+  const ctx=refreshAIContext();
+  const name=localStorage.getItem('flux_user_name')||'Student';
+  const p=load('profile',{});
+  const grade=p.grade||'';
+  const program=p.program||'';
+  const now=new Date();now.setHours(0,0,0,0);
+  const gpa=calcGPA(grades);
+  const mood=moodHistory.slice(-1)[0];
+  const subjs=getSubjects();
+  const fmt=t=>{const due=t.date?new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'no date';const over=t.date&&new Date(t.date+'T00:00:00')<now?' OVERDUE':'';const np=t.date&&isBreak(t.date)?' [NO-HW]':'';const s=subjs[t.subject];return`- [${(t.priority||'med').toUpperCase()}|${s?s.short:t.subject||'—'}|${t.type||'hw'}|Due ${due}${over}${np}]: ${t.name}`;};
+
+  // Calendar context — upcoming events + classes
+  const today=todayStr();
+  const in7=new Date(now);in7.setDate(now.getDate()+7);
+  const calEvents=(load('flux_events',[])).filter(e=>{if(!e.date)return false;const d=new Date(e.date+'T00:00:00');return d>=now&&d<=in7;}).map(e=>`- [EVENT|${e.date}${e.time?' '+e.time:''}]: ${e.title}`).join('\n')||'None';
+  const todayClasses=classes.filter(c=>c.name).map(c=>`P${c.period}: ${c.name}${c.teacher?' ('+c.teacher+')':''}`).join(', ')||'Not set up';
+
+  return`You are Flux AI — a brilliant, warm AI tutor and planner assistant built into Flux Planner.
+Student: ${name}${grade?' · Grade '+grade:''}${program?' · '+program:''}
+Today: ${TODAY.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
 ${mood?`Mood: ${mood.mood}/5, Stress: ${mood.stress}/10, Sleep: ${mood.sleep}h`:''}
-Recent (7d): ${ctx.recent.length?ctx.recent.map(fmt).join(' | '):'None'}
+
+SCHEDULE:
+Classes: ${todayClasses}
+Calendar events this week:\n${calEvents}
+
+TASKS:
+Recent completed (7d): ${ctx.recent.length?ctx.recent.map(fmt).join(' | '):'None'}
 Upcoming (14d): ${ctx.upcoming.length?ctx.upcoming.map(fmt).join(' | '):'None'}
 Active tasks: ${tasks.filter(t=>!t.done).slice(0,20).map(fmt).join(' | ')||'None'}
-${Object.keys(grades).length?`Grades: ${Object.entries(grades).map(([k,v])=>k+': '+v).join(', ')} | GPA: ${gpa!==null?precise(gpa):'—'}`:''}
-Physics: always g=10 m/s². GPA: 4dp always. Be warm, call student by name.
+${Object.keys(grades).length?`\nGrades: ${Object.entries(grades).map(([k,v])=>k+': '+v).join(', ')} | GPA: ${gpa!==null?precise(gpa)+' (4dp)':'—'}`:''}
 
-CRITICAL TASK RULES:
-- When adding tasks, output the actions block ONLY. Do NOT write any description, confirmation, or explanation of the task after it. The UI handles confirmation automatically.
-- Keep responses concise. Never repeat back task details you just added.
-- Never sign off with the student's name after every message — only use it naturally mid-conversation.
+RULES:
+- Be warm, concise, and helpful. Call the student by name naturally.
+- When adding tasks, output the actions block ONLY — no confirmation text.
+- Never sign off with the student's name repeatedly.
+- You can see their calendar and schedule above — use it to answer schedule questions.
+- GPA always to 4 decimal places.
 
-TASK ACTIONS — output this JSON block to add/modify tasks, then say nothing else about it:
+TASK ACTIONS — output ONLY this block when adding tasks:
 \`\`\`actions
-[{"action":"add_task","name":"...","priority":"high","date":"YYYY-MM-DD","type":"test","subject":"CHE"}]
-\`\`\``;}
+[{"action":"add_task","name":"...","priority":"high","date":"YYYY-MM-DD","type":"test","subject":"SUBJECT_KEY"}]
+\`\`\``;
+}
 function execActions(reply){const match=reply.match(/```actions\s*([\s\S]*?)```/);if(!match)return null;let actions;try{actions=JSON.parse(match[1].trim());}catch(e){return null;}if(!Array.isArray(actions))return null;let results=[],changed=false;actions.forEach(a=>{if(a.action==='add_task'){const t={id:Date.now()+Math.random(),name:a.name||'Task',subject:a.subject||'',priority:a.priority||'med',date:a.date||'',type:a.type||'hw',done:false,rescheduled:0,createdAt:Date.now()};t.urgencyScore=calcUrgency(t);tasks.unshift(t);results.push('✓ Added: '+a.name);changed=true;}else if(a.action==='delete_done'){const c=tasks.filter(t=>t.done).length;tasks=tasks.filter(t=>!t.done);results.push('✓ Removed '+c+' done tasks');changed=true;}else if(a.action==='mark_done'){const t=tasks.find(x=>x.name?.toLowerCase().includes((a.name||'').toLowerCase()));if(t){t.done=true;results.push('✓ Done: '+t.name);changed=true;}}});if(changed){save('tasks',tasks);renderStats();renderTasks();renderCalendar();renderCountdown();}return results.length?`<div style="padding:8px 10px;background:rgba(var(--accent-rgb),.08);border-radius:8px;font-size:.8rem;border:1px solid rgba(var(--accent-rgb),.2)">${results.join('<br>')}</div>`:null;}
 async function sendAI(){
   const input=document.getElementById('aiInput'),btn=document.getElementById('aiSendBtn');
@@ -795,6 +1005,7 @@ async function syncFromCloud(){
     if(d.sessionLog){sessionLog=d.sessionLog;save('flux_session_log',sessionLog);}
     setSyncStatus('synced');
     renderStats();renderTasks();renderCalendar();renderCountdown();renderSmartSug();renderProfile();renderGradeInputs();renderGradeOverview();renderNotesList();renderHabitList();renderGoalsList();renderCollegeList();renderMoodHistory();renderSchool();updateTStats();
+    populateSubjectSelects(); // rebuild subject dropdowns from synced classes
   }catch(e){console.error('Sync from cloud error',e);setSyncStatus('offline');}
 }
 const syncDebounceTimers={};
@@ -808,7 +1019,7 @@ function syncKey(key,val){
 let obCurrentStep=1;
 const OB_TOTAL=4;
 let obSelectedGrade='10';
-let obSelectedTrack='Pre-IB / MYP';
+let obSelectedTrack='';
 let obScheduleImgData=null;
 let obExtractedClasses=[];
 
@@ -859,7 +1070,7 @@ function obNext(){
   if(obCurrentStep===1){
     const name=document.getElementById('obName')?.value.trim();
     if(!name){document.getElementById('obName')?.focus();return;}
-    const p={name,grade:obSelectedGrade,track:obSelectedTrack};
+    const p={name,grade:obSelectedGrade,program:obSelectedTrack};
     localStorage.setItem('profile',JSON.stringify(p));
     localStorage.setItem('flux_user_name',name.split(' ')[0]);
     _updateSidebarName(name);
@@ -888,7 +1099,7 @@ function obFinish(){
   const ob=document.getElementById('onboarding');if(ob)ob.classList.remove('visible');
   document.getElementById('app').classList.add('visible');
   spawnConfetti();
-  renderProfile();renderSchool();renderSidebars();
+  renderProfile();renderSchool();renderSidebars();populateSubjectSelects();
   if(currentUser)syncToCloud();
 }
 function _updateSidebarName(name){
@@ -1122,7 +1333,7 @@ function initFeaturePills(){
     {label:'📷 Gemini Vision Import',c:'#10d9a0'},
     {label:'📊 4-Decimal GPA',c:'#fbbf24'},
     {label:'⏱ Pomodoro Timer',c:'#a78bfa'},
-    {label:'📅 A/B Day Calendar',c:'#3b82f6'},
+    {label:'📅 Smart Calendar',c:'#3b82f6'},
     {label:'☁️ Cloud Sync',c:'#10d9a0'},
     {label:'🃏 AI Flashcards',c:'#e879f9'},
     {label:'🚨 Panic Mode',c:'#f43f5e'},
@@ -1155,6 +1366,7 @@ function initFeaturePills(){
   checkAllPanic();setInterval(checkAllPanic,60000);
   initFeaturePills();
   renderSidebars();
+  populateSubjectSelects();
   initSidebarResize();
 
   // ── FLOW: Splash (once per session) → Login → (1st time) Onboarding → App ──
@@ -1210,7 +1422,7 @@ async function importGradesFromPhoto(event){
   try{
     const base64=await fileToBase64(file);
     const txt=await callGemini(base64,file.type,
-      'This is a student gradebook or report card. Extract every subject and its grade percentage or letter grade. Return ONLY a JSON object like {"Chemistry":92,"Math 3":"B+"}. Use the exact subject names shown. Return ONLY the JSON object, no markdown.');
+      'This is a student gradebook or report card. Extract every subject and its grade percentage or letter grade. Return ONLY a JSON object like {"Math":92,"English":"B+"}. Use the exact subject names shown. Return ONLY the JSON object, no markdown.');
     const clean=txt.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(clean);
     let imported=0;
@@ -1259,7 +1471,7 @@ async function importScheduleFromPhoto(event,resultElId){
     const parsed=JSON.parse(match?match[0]:clean);
     classes=parsed.map((c,i)=>({id:Date.now()+i,period:c.period||i+1,name:c.name||'Class '+(i+1),teacher:c.teacher||'',room:c.room||''}));
     save('flux_classes',classes);
-    renderSchool();
+    renderSchool();populateSubjectSelects();
     if(resEl)resEl.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Imported ${classes.length} classes!</div>`;
     syncKey('classes',classes);
   }catch(e){
