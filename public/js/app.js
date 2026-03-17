@@ -607,14 +607,6 @@ function applyCustomColor(){
   const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
   setAccent(hex,`${r},${g},${b}`,null);
 }
-  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
-  if(el)el.classList.add('active');
-}
-function applyCustomColor(){
-  const hex=document.getElementById('customColor').value;
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  setAccent(hex,`${r},${g},${b}`,null);
-}
 
 // ══ SETTINGS ══
 function switchStab(id,el){document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.spane').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('spane-'+id).classList.add('active');}
