@@ -46,11 +46,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)}
 
 /* ══ SPLASH ══ */
-#splash{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+#splash{position:fixed;inset:0;background:var(--bg);z-index:9999;overflow:hidden}
 
-/* ══ LOGIN ══ */
-#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:none;overflow-y:auto}
-#loginScreen.visible{display:block}
+/* ══ LOGIN — handled by login.css, just ensure z-index here ══ */
 
 /* ══ ONBOARDING ══ */
 #onboarding{position:fixed;inset:0;background:var(--bg);z-index:900;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
