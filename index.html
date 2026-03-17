@@ -765,6 +765,7 @@
         <button class="stab active" onclick="switchStab('appearance',this)">Theme</button>
         <button class="stab" onclick="switchStab('notifications',this)">Alerts</button>
         <button class="stab" onclick="switchStab('account',this)">Account</button>
+        <button class="stab" onclick="switchStab('tabs',this)">Tabs</button>
         <button class="stab" onclick="switchStab('data',this)">Data</button>
       </div>
       <div class="spane active" id="spane-appearance">
@@ -840,6 +841,14 @@
           </div>
         </div>
         <div class="card"><h3>No-HW Dates</h3><div id="noHWList" style="font-size:.75rem;color:var(--muted2);font-family:'JetBrains Mono',monospace;line-height:2.2"></div></div>
+      </div>
+      <div class="spane" id="spane-tabs">
+        <div class="card">
+          <h3>Customize Tabs</h3>
+          <div style="font-size:.78rem;color:var(--muted2);margin-bottom:14px;line-height:1.6">Drag to reorder · Toggle to show/hide · Settings tab is always visible</div>
+          <div class="tab-customizer" id="tabCustomizerList"></div>
+          <button onclick="resetTabs()" class="btn-sec" style="width:100%;margin-top:14px;font-size:.78rem">↺ Reset to defaults</button>
+        </div>
       </div>
       <div class="spane" id="spane-data">
         <div class="card">
