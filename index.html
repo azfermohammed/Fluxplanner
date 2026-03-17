@@ -110,7 +110,7 @@
           <div style="font-size:.8rem;color:var(--muted2)">Tap to add a photo<br><span style="font-size:.72rem;font-family:'JetBrains Mono',monospace">optional</span></div>
         </div>
         <span class="ob-label">Your first name</span>
-        <input type="text" id="obName" placeholder="e.g. Azfer" style="margin:0" oninput="updateObPreview()">
+        <input type="text" id="obName" placeholder="e.g. Jordan" style="margin:0" oninput="updateObPreview()">
         <span class="ob-label">Grade</span>
         <div class="ob-chip-wrap" id="obGradeChips">
           <div class="ob-chip" onclick="selectObChip(this,'obGrade','9')">9th</div>
@@ -206,6 +206,7 @@
 
   <!-- ── DESKTOP SIDEBAR ── -->
   <div class="sidebar" id="sidebar">
+    <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
     <div class="sidebar-header">
       <span class="sidebar-logo">Flux Planner</span>
       <button class="sidebar-toggle" onclick="toggleSidebar()" title="Collapse sidebar">☰</button>
@@ -769,16 +770,24 @@
         <button class="stab" onclick="switchStab('data',this)">Data</button>
       </div>
       <div class="spane active" id="spane-appearance">
+        <!-- Theme presets -->
         <div class="card">
-          <h3>Theme</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-            <button onclick="themeDark()" class="btn-sec">🌙 Dark</button>
-            <button onclick="themeCrimson()" style="background:rgba(153,0,0,.7)">🏫 IA Crimson</button>
-            <button onclick="themeFocus()" class="btn-sec">◼ Focus</button>
-            <button onclick="themeSepia()" style="background:rgba(180,120,40,.5)">📜 Sepia</button>
+          <h3>Themes</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+            <button onclick="applyTheme('dark')" class="theme-btn" data-theme="dark">🌙 Midnight</button>
+            <button onclick="applyTheme('light')" class="theme-btn" data-theme="light">☀️ Cloud</button>
+            <button onclick="applyTheme('aurora')" class="theme-btn" data-theme="aurora">🌌 Aurora</button>
+            <button onclick="applyTheme('ember')" class="theme-btn" data-theme="ember">🔥 Ember</button>
+            <button onclick="applyTheme('forest')" class="theme-btn" data-theme="forest">🌿 Forest</button>
+            <button onclick="applyTheme('rose')" class="theme-btn" data-theme="rose">🌸 Rose</button>
+            <button onclick="applyTheme('ocean')" class="theme-btn" data-theme="ocean">🌊 Deep Ocean</button>
+            <button onclick="applyTheme('candy')" class="theme-btn" data-theme="candy">🍬 Candy</button>
           </div>
-          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px">Accent Color</div>
-          <div class="swatches" id="swatches">
+        </div>
+        <!-- Accent color -->
+        <div class="card">
+          <h3>Accent Color</h3>
+          <div class="swatches" id="swatches" style="margin-bottom:12px">
             <div class="swatch active" style="background:#6366f1" onclick="setAccent('#6366f1','99,102,241',this)"></div>
             <div class="swatch" style="background:#3b82f6" onclick="setAccent('#3b82f6','59,130,246',this)"></div>
             <div class="swatch" style="background:#a78bfa" onclick="setAccent('#a78bfa','167,139,250',this)"></div>
@@ -787,14 +796,45 @@
             <div class="swatch" style="background:#fbbf24" onclick="setAccent('#fbbf24','251,191,36',this)"></div>
             <div class="swatch" style="background:#fb923c" onclick="setAccent('#fb923c','251,146,60',this)"></div>
             <div class="swatch" style="background:#e879f9" onclick="setAccent('#e879f9','232,121,249',this)"></div>
+            <div class="swatch" style="background:#22c55e" onclick="setAccent('#22c55e','34,197,94',this)"></div>
+            <div class="swatch" style="background:#f59e0b" onclick="setAccent('#f59e0b','245,158,11',this)"></div>
           </div>
-          <div style="margin-top:14px">
-            <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px">Custom Color</div>
-            <div class="irow" style="margin-top:8px">
-              <input type="color" id="customColor" value="#6366f1" style="flex:0 0 44px;width:44px;height:38px;margin:0;padding:2px;border-radius:8px;cursor:pointer">
-              <button onclick="applyCustomColor()" style="flex:1">Apply</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="customColor" value="#6366f1" style="flex:0 0 44px;width:44px;height:38px;margin:0;padding:2px;border-radius:8px;cursor:pointer">
+            <button onclick="applyCustomColor()" style="flex:1">Set custom accent</button>
+          </div>
+        </div>
+        <!-- Advanced: per-element color overrides -->
+        <div class="card">
+          <h3>Advanced Colors</h3>
+          <div style="font-size:.75rem;color:var(--muted2);margin-bottom:14px;line-height:1.6">Fine-tune individual colors on top of any theme.</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Background</div><div style="font-size:.7rem;color:var(--muted)">Main page bg</div></div>
+              <input type="color" id="cc-bg" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--bg',this.value)">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Card background</div><div style="font-size:.7rem;color:var(--muted)">Cards &amp; panels</div></div>
+              <input type="color" id="cc-card" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--card-solid',this.value)">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Text color</div><div style="font-size:.7rem;color:var(--muted)">Main text</div></div>
+              <input type="color" id="cc-text" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--text',this.value)">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Green / Success</div><div style="font-size:.7rem;color:var(--muted)">Done states, streaks</div></div>
+              <input type="color" id="cc-green" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--green',this.value)">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Red / Danger</div><div style="font-size:.7rem;color:var(--muted)">Overdue, high priority</div></div>
+              <input type="color" id="cc-red" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--red',this.value)">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div style="font-size:.85rem;font-weight:600">Gold / Warning</div><div style="font-size:.7rem;color:var(--muted)">Badges, goals</div></div>
+              <input type="color" id="cc-gold" style="width:44px;height:34px;margin:0;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border2)" onchange="applyCustomVar('--gold',this.value)">
             </div>
           </div>
+          <button onclick="resetCustomColors()" class="btn-sec" style="width:100%;margin-top:14px;font-size:.78rem">↺ Reset colors</button>
         </div>
       </div>
       <div class="spane" id="spane-notifications">
