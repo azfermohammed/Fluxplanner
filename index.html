@@ -800,29 +800,41 @@
     </div>
 
     <!-- ─── AI ─── -->
-    <div id="ai" class="panel">
-      <div class="card" style="padding:14px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="ai-orb"></div>
-          <div style="flex:1">
-            <div style="font-weight:800;font-size:1rem;background:linear-gradient(90deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Flux AI</div>
-            <div style="font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;-webkit-text-fill-color:var(--muted)">Tutoring · Flashcards · Study plans · Exam prep</div>
-          </div>
-          <label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:.75rem;color:var(--muted2)">
-            📷 <input type="file" accept="image/*" id="aiImgUpload" style="display:none;width:auto;margin:0" onchange="handleAIImg(event)">
-          </label>
+    <div id="ai" class="panel" style="display:none;flex-direction:column;height:calc(100vh - 60px);padding:0">
+      <!-- Chat tabs bar -->
+      <div style="display:flex;align-items:center;gap:6px;padding:10px 14px 0;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--border)">
+        <div id="aiChatTabs" style="display:flex;gap:6px;flex:1;overflow-x:auto"></div>
+        <button onclick="newAIChat()" style="flex-shrink:0;padding:5px 12px;font-size:.75rem;border-radius:20px;background:rgba(var(--accent-rgb),.12);border:1px solid rgba(var(--accent-rgb),.25);color:var(--accent)">+ New</button>
+      </div>
+      <!-- Header -->
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div class="ai-orb" style="width:28px;height:28px;flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:.95rem;background:linear-gradient(90deg,var(--text),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Flux AI</div>
+          <div style="font-size:.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace;-webkit-text-fill-color:var(--muted)">Groq · Llama 3.3 70B</div>
         </div>
-        <div id="aiImgPreview" style="display:none;margin-top:10px"></div>
+        <label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:.75rem;color:var(--muted2);flex-shrink:0">
+          📷 <input type="file" accept="image/*" id="aiImgUpload" style="display:none;width:auto;margin:0" onchange="handleAIImg(event)">
+        </label>
+        <button onclick="clearAIChat()" style="padding:5px 10px;font-size:.72rem;background:transparent;border:1px solid var(--border2);color:var(--muted2);flex-shrink:0">Clear</button>
       </div>
-      <div class="ai-sugs" id="aiSugs"></div>
-      <div class="ai-msgs" id="aiMsgs"></div>
-      <div class="ai-irow">
-        <textarea id="aiInput" rows="1" placeholder="Ask anything — tutoring, flashcards, exam prep, study plans..."
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">↑</button>
+      <!-- Messages — scrollable -->
+      <div id="aiMsgsWrap" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:0">
+        <div class="ai-sugs" id="aiSugs"></div>
+        <div class="ai-msgs" id="aiMsgs"></div>
       </div>
-      <div style="font-size:.62rem;color:var(--muted);text-align:center;padding:4px 0;font-family:'JetBrains Mono',monospace">Flux AI · Groq · Llama 3.3 70B · g = 10 m/s²</div>
+      <!-- Image preview -->
+      <div id="aiImgPreview" style="display:none;padding:0 14px 6px;flex-shrink:0"></div>
+      <!-- Input -->
+      <div style="padding:10px 14px 12px;flex-shrink:0;border-top:1px solid var(--border)">
+        <div class="ai-irow">
+          <textarea id="aiInput" rows="1" placeholder="Ask anything — tutoring, flashcards, exam prep..."
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <button class="ai-send" id="aiSendBtn" onclick="sendAI()">↑</button>
+        </div>
+        <div style="font-size:.58rem;color:var(--muted);text-align:center;padding:4px 0;font-family:'JetBrains Mono',monospace">Flux AI · g = 10 m/s²</div>
+      </div>
     </div>
 
     <!-- ─── SETTINGS ─── -->
