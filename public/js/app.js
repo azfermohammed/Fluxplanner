@@ -4,7 +4,18 @@
 const load=(k,def)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('Storage full',e);}};
 
-// ══ CONSTANTS ══
+// ══ DATA VERSION — bump this to force-wipe all local data on all devices ══
+const DATA_VERSION=3;
+(function checkDataVersion(){
+  const stored=parseInt(localStorage.getItem('flux_data_version')||'0');
+  if(stored<DATA_VERSION){
+    // Wipe all flux data but keep auth session
+    const keep=['flux_data_version','flux_splash_shown'];
+    Object.keys(localStorage).forEach(k=>{if(!keep.includes(k))localStorage.removeItem(k);});
+    localStorage.setItem('flux_data_version',String(DATA_VERSION));
+    console.log('✓ Flux data wiped for version',DATA_VERSION);
+  }
+})();
 // ══ SUBJECTS — built dynamically from user's classes ══
 // No hardcoded subjects. Colors auto-assigned.
 const SUBJECT_COLORS=['#6366f1','#f43f5e','#10d9a0','#fbbf24','#3b82f6','#c084fc','#fb923c','#e879f9','#22d3ee','#4ade80','#f472b6','#a78bfa'];
