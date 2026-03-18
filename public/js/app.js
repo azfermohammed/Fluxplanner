@@ -1498,13 +1498,15 @@ async function analyzeScheduleImg(){
     const res=await fetch(API.gemini,{
       method:'POST',headers:GEMINI_HEADERS,
       body:JSON.stringify({imageBase64:base64,mimeType:mime,
-        prompt:'This is a student class schedule. Extract every class and return ONLY a JSON array: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods sequentially if not shown. Empty string for missing fields. ONLY the JSON array.'})
+        prompt:'This is a student class schedule image. Extract every class/period. Return ONLY a valid JSON array with no extra text, no markdown, no backticks: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods sequentially if not shown. Empty string for missing fields. ONLY the JSON array.'})
     });
     if(!res.ok)throw new Error('Gemini error '+res.status);
     const data=await res.json();
-    let txt=(data.text||'[]').replace(/```json|```/g,'').trim();
-    const match=txt.match(/\[[\s\S]*\]/);if(match)txt=match[0];
-    const parsed=JSON.parse(txt);
+    let txt=(data.text||'').replace(/```json/g,'').replace(/```/g,'').trim();
+    if(!txt)throw new Error('Gemini returned empty response — check GEMINI_API_KEY in Supabase secrets');
+    const start=txt.indexOf('[');const end=txt.lastIndexOf(']');
+    if(start===-1||end===-1)throw new Error('No class list found. Try a clearer photo.');
+    const parsed=JSON.parse(txt.slice(start,end+1));
     obExtractedClasses=parsed.map((c,i)=>({id:Date.now()+i,period:c.period||i+1,name:c.name||'Class '+(i+1),teacher:c.teacher||'',room:c.room||''}));
     if(resultEl){
       resultEl.style.display='block';
@@ -1853,14 +1855,23 @@ async function importScheduleFromPhoto(event,resultElId){
   try{
     const base64=await fileToBase64(file);
     const txt=await callGemini(base64,file.type,
-      'This is a student class schedule. Extract every class/period. Return ONLY a JSON array: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods 1,2,3... if not shown. Use empty string for missing fields. ONLY return the JSON array, no markdown.');
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const match=clean.match(/\[[\s\S]*\]/);
-    const parsed=JSON.parse(match?match[0]:clean);
+      'This is a student class schedule image. Extract every class/period. Return ONLY a valid JSON array with no extra text, no markdown, no backticks: [{"period":1,"name":"Chemistry","teacher":"Mr. Smith","room":"204"}]. Number periods 1,2,3... if not shown. Use empty string for missing fields. Return ONLY the JSON array.');
+    if(!txt||!txt.trim()){throw new Error('Gemini returned empty response — check your GEMINI_API_KEY in Supabase secrets');}
+    // Try to extract JSON array from response
+    let jsonStr=txt.trim();
+    // Remove markdown code blocks if present
+    jsonStr=jsonStr.replace(/```json/g,'').replace(/```/g,'').trim();
+    // Find the first [ and last ]
+    const start=jsonStr.indexOf('[');
+    const end=jsonStr.lastIndexOf(']');
+    if(start===-1||end===-1)throw new Error('No class list found in response. Try a clearer photo.');
+    jsonStr=jsonStr.slice(start,end+1);
+    const parsed=JSON.parse(jsonStr);
+    if(!Array.isArray(parsed)||!parsed.length)throw new Error('No classes detected. Try a clearer photo of your schedule.');
     classes=parsed.map((c,i)=>({id:Date.now()+i,period:c.period||i+1,name:c.name||'Class '+(i+1),teacher:c.teacher||'',room:c.room||''}));
     save('flux_classes',classes);
     renderSchool();populateSubjectSelects();
-    if(resEl)resEl.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Imported ${classes.length} classes!</div>`;
+    if(resEl)resEl.innerHTML=`<div style="color:var(--green);font-size:.82rem">✓ Imported ${classes.length} classes! Check School Info tab.</div>`;
     syncKey('classes',classes);
   }catch(e){
     if(resEl)resEl.innerHTML=`<div style="color:var(--red);font-size:.82rem">Could not read schedule: ${e.message}</div>`;
