@@ -157,7 +157,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ── PANELS ── */
 .panel{display:none;padding:18px 18px 90px;animation:panelIn .28s cubic-bezier(.4,0,.2,1)}
 .panel.active{display:block}
+.panel.active.panel-flex{display:flex}
 @keyframes panelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* AI panel special — full height flex, no padding */
+#ai.active{display:flex!important;flex-direction:column;padding:0;height:calc(100vh - 57px);overflow:hidden}
 
 /* ── MOBILE BOTTOM NAV ── */
 .bottom-nav{
