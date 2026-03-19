@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy · Flux Planner</title>
+<style>
+  :root{--accent:#6c63ff;--bg:#07080f;--card:#13141f;--text:#f0f1f8;--muted:#7b809a;--border:rgba(255,255,255,.08)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:15px;line-height:1.75;padding:40px 20px 80px}
+  .wrap{max-width:700px;margin:0 auto}
+  .logo{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,#f0f1f8,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+  .updated{font-size:.78rem;color:var(--muted);margin-bottom:40px;font-family:monospace}
+  h1{font-size:2rem;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+  h2{font-size:1.1rem;font-weight:700;margin:32px 0 10px;color:var(--text)}
+  p{color:#c8cad8;margin-bottom:14px}
+  ul{color:#c8cad8;padding-left:20px;margin-bottom:14px}
+  ul li{margin-bottom:6px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px}
+  .back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.85rem;margin-bottom:32px;text-decoration:none}
+  .back:hover{color:var(--text)}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+  <a href="/Fluxplanner/" class="back">← Back to Flux Planner</a>
+  <div class="logo">Flux Planner</div>
+  <h1>Privacy Policy</h1>
+  <div class="updated">Last updated: March 2026</div>
+
+  <div class="card">
+    <p>Flux Planner is a student productivity tool built by a student, for students. This policy explains what data we collect, how we use it, and how we protect it.</p>
+  </div>
+
+  <h2>1. What We Collect</h2>
+  <p>We collect only what's necessary to make the app work:</p>
+  <ul>
+    <li><strong>Google Account info</strong> — your name, email, and profile photo when you sign in with Google</li>
+    <li><strong>Planner data</strong> — tasks, grades, notes, habits, goals, and schedule you enter into the app</li>
+    <li><strong>Gmail data</strong> — we read email subjects and senders only (read-only access, only if you connect Gmail)</li>
+    <li><strong>Google Calendar data</strong> — we read upcoming events (read-only access, only if you connect Calendar)</li>
+    <li><strong>School info</strong> — locker number, student ID, and class schedule you optionally enter</li>
+  </ul>
+
+  <h2>2. How We Use Your Data</h2>
+  <ul>
+    <li>To sync your planner data across your devices</li>
+    <li>To power the Flux AI tutor (your context is sent to Groq's API to generate responses)</li>
+    <li>To show your upcoming Gmail tasks and Calendar events inside the app</li>
+    <li>We never sell, share, or use your data for advertising</li>
+  </ul>
+
+  <h2>3. Where Data Is Stored</h2>
+  <ul>
+    <li><strong>Supabase</strong> — your planner data is stored securely in a Supabase PostgreSQL database with row-level security. Only you can access your own data.</li>
+    <li><strong>Your device</strong> — data is also cached locally in your browser's localStorage for offline access</li>
+    <li><strong>Groq API</strong> — AI chat messages are sent to Groq (groq.com) for processing. Groq's privacy policy applies to those requests.</li>
+  </ul>
+
+  <h2>4. Google API Scopes We Request</h2>
+  <ul>
+    <li><code>gmail.readonly</code> — to show your school emails inside the app as tasks</li>
+    <li><code>calendar.readonly</code> — to show upcoming events on your planner calendar</li>
+    <li>We do not modify, delete, or send any emails or calendar events</li>
+    <li>We do not share Google user data with third parties except as described above</li>
+  </ul>
+
+  <h2>5. Data Retention & Deletion</h2>
+  <p>You can delete all your data at any time from Settings → Data → Clear All Data. This removes your data from both your device and our servers immediately.</p>
+
+  <h2>6. Children's Privacy</h2>
+  <p>Flux Planner is designed for high school students (14+). We do not knowingly collect data from children under 13. If you are under 13, please do not use this app.</p>
+
+  <h2>7. Contact</h2>
+  <p>Questions about privacy? Email <a href="mailto:azfermohammed21@gmail.com">azfermohammed21@gmail.com</a></p>
+</div>
+</body>
+</html>
