@@ -1912,6 +1912,239 @@ function getRedirectURL(){
 }
 
 // Sign in with Google while keeping all existing guest data
+// ══ EMAIL / PASSWORD AUTH ══
+let _authMode='signin'; // 'signin' | 'signup'
+
+function toggleAuthMode(){
+  _authMode=_authMode==='signin'?'signup':'signin';
+  const nameRow=document.getElementById('loginNameRow');
+  const btn=document.getElementById('loginEmailBtn');
+  const toggleText=document.getElementById('loginToggleText');
+  const toggleAction=document.getElementById('loginToggleAction');
+  if(_authMode==='signup'){
+    if(nameRow)nameRow.style.display='block';
+    if(btn)btn.textContent='Create account';
+    if(toggleText)toggleText.textContent='Already have an account?';
+    if(toggleAction)toggleAction.textContent='Sign in';
+  } else {
+    if(nameRow)nameRow.style.display='none';
+    if(btn)btn.textContent='Sign in';
+    if(toggleText)toggleText.textContent="Don't have an account?";
+    if(toggleAction)toggleAction.textContent='Sign up';
+  }
+  const errEl=document.getElementById('loginAuthError');
+  if(errEl){errEl.textContent='';errEl.classList.remove('show');}
+}
+
+function showAuthError(msg){
+  const el=document.getElementById('loginAuthError');
+  if(!el)return;
+  el.textContent=msg;el.classList.add('show');
+}
+
+async function handleEmailAuth(){
+  const email=document.getElementById('loginEmail')?.value.trim();
+  const password=document.getElementById('loginPassword')?.value;
+  const name=document.getElementById('loginDisplayName')?.value.trim();
+  if(!email||!password){showAuthError('Please enter your email and password.');return;}
+  if(password.length<6){showAuthError('Password must be at least 6 characters.');return;}
+  const sb=getSB();if(!sb){showAuthError('Auth not available.');return;}
+  const btn=document.getElementById('loginEmailBtn');
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  try{
+    let result;
+    if(_authMode==='signup'){
+      result=await sb.auth.signUp({
+        email,password,
+        options:{data:{full_name:name||email.split('@')[0]}}
+      });
+      if(result.error)throw result.error;
+      if(result.data?.user&&!result.data.session){
+        showAuthError('Check your email for a confirmation link!');
+        if(btn){btn.textContent='Create account';btn.disabled=false;}
+        return;
+      }
+    } else {
+      result=await sb.auth.signInWithPassword({email,password});
+      if(result.error)throw result.error;
+    }
+  }catch(e){
+    showAuthError(e.message||'Authentication failed. Please try again.');
+    if(btn){btn.textContent=_authMode==='signup'?'Create account':'Sign in';btn.disabled=false;}
+  }
+}
+
+// ══ FAB — FLOATING ACTION BUTTON ══
+function initFAB(){
+  const fab=document.getElementById('fabBtn');
+  const menu=document.getElementById('fabMenu');
+  if(!fab||!menu)return;
+  let open=false;
+  fab.addEventListener('click',e=>{
+    e.stopPropagation();
+    open=!open;
+    fab.style.transform=open?'rotate(45deg) scale(1.1)':'rotate(0) scale(1)';
+    menu.style.display=open?'flex':'none';
+    if(open){
+      requestAnimationFrame(()=>{
+        menu.style.opacity='1';menu.style.transform='translateY(0) scale(1)';
+      });
+    }
+  });
+  document.addEventListener('click',()=>{
+    if(open){open=false;fab.style.transform='';menu.style.opacity='0';menu.style.transform='translateY(8px) scale(.97)';setTimeout(()=>{if(!open)menu.style.display='none';},180);}
+  });
+}
+
+function fabAddTask(){
+  document.getElementById('fabMenu').style.display='none';
+  document.getElementById('fabBtn').style.transform='';
+  // Focus quick add
+  const qa=document.getElementById('quickAddInput');
+  if(qa){nav('dashboard');setTimeout(()=>{qa.focus();qa.scrollIntoView({behavior:'smooth',block:'center'});},120);}
+}
+function fabAddGrade(){
+  document.getElementById('fabMenu').style.display='none';
+  document.getElementById('fabBtn').style.transform='';
+  nav('grades');
+  setTimeout(()=>{document.getElementById('newSubject')?.focus();},150);
+}
+function fabFocus(){
+  document.getElementById('fabMenu').style.display='none';
+  document.getElementById('fabBtn').style.transform='';
+  nav('timer');
+}
+
+// ══ KEYBOARD SHORTCUTS ══
+function initKeyboardShortcuts(){
+  document.addEventListener('keydown',e=>{
+    // Don't fire when typing in inputs
+    const tag=document.activeElement?.tagName;
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    switch(e.key){
+      case 'n': case 'N': case 't': case 'T':
+        e.preventDefault();
+        nav('dashboard');
+        setTimeout(()=>{
+          const qa=document.getElementById('quickAddInput');
+          if(qa){qa.focus();qa.scrollIntoView({behavior:'smooth',block:'center'});}
+        },100);
+        break;
+      case '/':
+        e.preventDefault();
+        nav('ai');
+        setTimeout(()=>document.getElementById('aiInput')?.focus(),150);
+        break;
+      case 'g': case 'G':
+        e.preventDefault();nav('grades');break;
+      case 'c': case 'C':
+        e.preventDefault();nav('calendar');break;
+      case 'Escape':
+        // Close any open modal
+        document.querySelectorAll('.modal-overlay').forEach(m=>{if(m.style.display!=='none')closeModal(m.id);});
+        break;
+    }
+  });
+}
+
+// Keyboard hint tooltip
+function showKeyHint(){
+  const hint=document.getElementById('keyHint');
+  if(!hint||load('flux_keyhint_dismissed',false))return;
+  setTimeout(()=>{
+    hint.style.display='flex';
+    hint.style.animation='slideUp .3s var(--ease-spring)';
+    setTimeout(()=>{hint.style.opacity='0';hint.style.transition='opacity .3s';setTimeout(()=>hint.style.display='none',300);},4000);
+  },2000);
+}
+
+// ══ GPA WHAT-IF CALCULATOR ══
+function calcGPAWhatIf(){
+  const subject=document.getElementById('whatIfSubject')?.value.trim();
+  const score=parseFloat(document.getElementById('whatIfScore')?.value);
+  const el=document.getElementById('whatIfResult');
+  if(!el)return;
+  if(!subject||isNaN(score)){el.textContent='Enter a subject and score.';el.style.color='var(--muted)';return;}
+  // Clone grades and add/overwrite with hypothetical
+  const hypothetical={...grades,[subject]:String(score)};
+  const newGPA=calcGPA(hypothetical);
+  const currentGPA=calcGPA(grades);
+  if(newGPA===null){el.textContent='Could not calculate.';return;}
+  const diff=newGPA-(currentGPA||0);
+  const sign=diff>=0?'+':'';
+  const color=diff>0?'var(--green)':diff<0?'var(--red)':'var(--muted2)';
+  el.innerHTML=`New GPA: <strong style="color:var(--accent);font-family:'JetBrains Mono',monospace">${newGPA.toFixed(4)}</strong>
+    <span style="color:${color};font-size:.8rem;margin-left:8px">${sign}${diff.toFixed(4)}</span>`;
+}
+
+// ══ PANIC GLOW (task-level) ══
+function applyPanicGlow(){
+  const now=new Date();
+  const in12h=new Date(now.getTime()+12*60*60*1000);
+  document.querySelectorAll('[data-task-id]').forEach(el=>{
+    const id=parseInt(el.dataset.taskId);
+    const t=tasks.find(x=>x.id===id);
+    if(!t||t.done)return;
+    if(t.date){
+      const due=new Date(t.date+'T23:59:00');
+      if(due<=in12h&&due>=now){
+        el.style.boxShadow='0 0 0 1px rgba(255,77,109,.3),0 4px 20px rgba(255,77,109,.15)';
+        el.style.borderColor='rgba(255,77,109,.3)';
+      }
+    }
+  });
+}
+
+// ══ ITEM 21 — FIXED LAYOUT: PANEL SCROLL INDEPENDENCE ══
+function initScrollLayout(){
+  // App container: sidebar + main are fixed height, main scrolls independently
+  const app=document.getElementById('app');
+  if(!app)return;
+  app.style.height='100vh';
+  app.style.overflow='hidden';
+  app.style.display='flex';
+
+  const mainContent=document.querySelector('.main-content');
+  if(mainContent){
+    mainContent.style.height='100vh';
+    mainContent.style.overflow='hidden';
+    mainContent.style.display='flex';
+    mainContent.style.flexDirection='column';
+  }
+
+  const sidebar=document.getElementById('sidebar');
+  if(sidebar){
+    sidebar.style.height='100vh';
+    sidebar.style.overflowY='auto';
+    sidebar.style.position='sticky';
+    sidebar.style.top='0';
+    sidebar.style.flexShrink='0';
+  }
+
+  const topbar=document.querySelector('.topbar');
+  if(topbar){
+    topbar.style.flexShrink='0';
+    topbar.style.position='relative';
+    topbar.style.zIndex='30';
+  }
+
+  // Each panel becomes independent scroll container
+  document.querySelectorAll('.panel').forEach(panel=>{
+    panel.style.flex='1';
+    panel.style.overflowY='auto';
+    panel.style.overscrollBehavior='contain';
+    panel.style.webkitOverflowScrolling='touch';
+  });
+
+  // AI panel special — already flex column with fixed height
+  const aiPanel=document.getElementById('ai');
+  if(aiPanel){
+    aiPanel.style.overflow='hidden';
+    aiPanel.style.flex='1';
+  }
+}
+
 async function signInWithGoogleKeepData(){
   // Mark that we want to migrate guest data after sign-in
   save('flux_migrate_guest',true);
@@ -2299,6 +2532,11 @@ function initDashboardFeatures(){
   renderSidebars();
   populateSubjectSelects();
   initSidebarResize();
+  initKeyboardShortcuts();
+  initFAB();
+  initScrollLayout();
+  showKeyHint();
+  setInterval(applyPanicGlow,5000);
 
   // ── FLOW: Splash (once per session) → Login → (1st time) Onboarding → App ──
   const afterSplash = () => initAuth();
