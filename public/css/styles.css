@@ -467,3 +467,143 @@ details.card[open]>summary{border-radius:var(--r) var(--r) 0 0;border-bottom:1px
 #topbarClock{font-size:.68rem!important;letter-spacing:.5px}
 #topbarEnergy{transition:transform var(--t-base) var(--ease-spring)}
 #topbarEnergy:hover{transform:scale(1.2)}
+
+/* ══ ITEM 4 — GLASSMORPHISM TOPBAR ══ */
+.topbar{
+  background:rgba(7,8,15,.75)!important;
+  backdrop-filter:blur(16px) saturate(160%)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(160%)!important;
+  border-bottom:1px solid rgba(255,255,255,.07)!important;
+}
+[data-theme="light"] .topbar{background:rgba(242,243,250,.82)!important}
+
+/* ══ ITEM 6 — CARD HOVER LIFT (consistent) ══ */
+.card{transition:border-color var(--t-base) var(--ease),box-shadow var(--t-base) var(--ease),transform var(--t-base) var(--ease)!important}
+.card:hover{border-color:var(--border2)!important}
+.card.card-interactive:hover,
+.note-card:hover,
+.goal-item:hover,
+.gmail-item:hover,
+.feat-card:hover{
+  transform:translateY(-3px) scale(1.005)!important;
+  box-shadow:0 10px 36px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.05) inset!important;
+  border-color:rgba(var(--accent-rgb),.2)!important;
+}
+
+/* ══ ITEM 8 — PAGE TRANSITION ══ */
+.panel.active{animation:panelReveal .28s var(--ease-spring) both!important}
+@keyframes panelReveal{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ══ ITEM 10 — SIDEBAR ACTIVE GLOW ══ */
+.nav-item.active{
+  background:rgba(var(--accent-rgb),.13)!important;
+  color:var(--accent)!important;
+}
+.nav-item.active::before{
+  box-shadow:0 0 10px rgba(var(--accent-rgb),.5)!important;
+}
+.nav-item{transition:all var(--t-base) var(--ease)!important}
+.nav-item:hover{transform:translateX(3px)!important}
+
+/* ══ ITEM 11 — MOBILE NAV IMPROVEMENTS ══ */
+.bottom-nav{padding-bottom:max(env(safe-area-inset-bottom),8px)!important}
+.bnav-item{padding:10px 4px 8px!important;min-width:54px!important;font-size:.5rem!important;letter-spacing:.2px!important}
+.bnav-item.active{color:var(--accent)!important}
+.bnav-item.active .bni{
+  filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.6));
+}
+
+/* ══ ITEM 12 — MOBILE MODAL FULL-SCREEN ══ */
+@media(max-width:768px){
+  .modal-card{
+    border-radius:var(--r-xl) var(--r-xl) 0 0!important;
+    padding:24px 20px!important;
+    max-height:92vh!important;
+  }
+}
+
+/* ══ ITEM 13 — EMPTY STATES ══ */
+.empty{
+  padding:48px 20px!important;
+  animation:fadeIn .4s var(--ease)!important;
+}
+.empty-icon{font-size:3rem!important;opacity:.3!important;margin-bottom:4px}
+.empty-title{font-size:1rem!important;font-weight:700!important;color:var(--muted2)!important}
+.empty-sub{font-size:.8rem!important;max-width:220px!important;line-height:1.65!important}
+
+/* ══ ITEM 14 — PANIC GLOW ON TASKS ══ */
+.task-item.panic-glow{
+  box-shadow:0 0 0 1px rgba(255,77,109,.25),0 4px 20px rgba(255,77,109,.12)!important;
+  border-color:rgba(255,77,109,.25)!important;
+}
+@keyframes panicGlowPulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(255,77,109,.25),0 4px 20px rgba(255,77,109,.1)}
+  50%{box-shadow:0 0 0 2px rgba(255,77,109,.4),0 6px 28px rgba(255,77,109,.2)}
+}
+
+/* ══ ITEM 15 — SKELETON LOADER ══ */
+.skeleton{
+  background:linear-gradient(90deg,var(--card2) 25%,var(--card3) 50%,var(--card2) 75%)!important;
+  background-size:200% 100%!important;
+  animation:shimmer 1.4s infinite!important;
+  border-radius:8px!important;
+  border:none!important;
+}
+
+/* ══ ITEM 17 — BUTTON POLISH ══ */
+button{transition:all var(--t-base) var(--ease)!important}
+button:hover:not(:disabled):not(.btn-sm):not(.nav-item):not(.bnav-item):not(.sidebar-toggle):not(.mob-menu-btn){
+  transform:translateY(-1px)!important;
+}
+button:active:not(:disabled){transform:scale(.96) translateY(0)!important}
+
+/* ══ ITEM 21 — INDEPENDENT PANEL SCROLLING ══ */
+#app{height:100vh!important;overflow:hidden!important;display:flex!important}
+.main-content{
+  height:100vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1!important;
+  min-width:0!important;
+}
+.topbar{flex-shrink:0!important;position:relative!important;z-index:30!important}
+.panel{
+  flex:1!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  height:0!important; /* forces overflow to work inside flex */
+}
+.panel.active{display:flex!important;flex-direction:column!important}
+/* Exception — AI panel needs its own scroll system */
+#ai.active{overflow:hidden!important;height:auto!important}
+#aiMsgsWrap{flex:1!important;overflow-y:auto!important}
+
+/* Sidebar stays fixed height, internal nav scrolls */
+.sidebar{
+  height:100vh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.sidebar-nav{flex:1!important;overflow-y:auto!important;overflow-x:hidden!important}
+
+/* FAB doesn't move on scroll */
+#fabContainer{position:fixed!important;bottom:86px!important;right:20px!important}
+@media(max-width:768px){
+  #fabContainer{bottom:80px!important}
+}
+
+/* ══ FAB HOVER ══ */
+#fabBtn:hover{transform:scale(1.1) rotate(5deg)!important;box-shadow:0 8px 28px rgba(var(--accent-rgb),.55)!important}
+#fabBtn:active{transform:scale(.93)!important}
+
+/* ══ KEYBOARD HINT ══ */
+#keyHint{animation:slideUp .3s var(--ease-spring)}
+
+/* ══ EMAIL AUTH FORM ══ */
+.login-email-form input{margin-top:0!important;margin-bottom:8px!important}
