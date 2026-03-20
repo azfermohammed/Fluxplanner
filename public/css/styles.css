@@ -560,11 +560,15 @@ button:hover:not(:disabled):not(.btn-sm):not(.nav-item):not(.bnav-item):not(.sid
 }
 button:active:not(:disabled){transform:scale(.96) translateY(0)!important}
 
-/* ══ ITEM 21 — INDEPENDENT PANEL SCROLLING (FIXED) ══ */
+/* ══ ITEM 21 — INDEPENDENT PANEL SCROLLING ══ */
 
-/* ── DESKTOP: sidebar + main side by side, panels scroll independently ── */
+/* DESKTOP ONLY — sidebar + main flex, each panel scrolls inside container */
 @media(min-width:769px){
-  #app{height:100vh!important;overflow:hidden!important;display:flex!important}
+  #app{
+    height:100vh!important;
+    overflow:hidden!important;
+    display:flex!important;
+  }
   .main-content{
     height:100vh!important;
     overflow:hidden!important;
@@ -573,51 +577,103 @@ button:active:not(:disabled){transform:scale(.96) translateY(0)!important}
     flex:1!important;
     min-width:0!important;
   }
-  .topbar{flex-shrink:0!important;position:sticky!important;top:0!important;z-index:30!important}
+  .topbar{
+    flex-shrink:0!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+  }
   .panel{
     flex:1!important;
     overflow-y:auto!important;
     overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
     height:0!important;
   }
   .panel.active{display:block!important}
-  #ai.active{overflow:hidden!important;height:auto!important;display:flex!important;flex-direction:column!important}
+  #ai.active{
+    overflow:hidden!important;
+    height:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
   #aiMsgsWrap{flex:1!important;overflow-y:auto!important}
   .sidebar{
     height:100vh!important;
     overflow:hidden!important;
     display:flex!important;
     flex-direction:column!important;
+    position:sticky!important;
+    top:0!important;
   }
-  .sidebar-nav{flex:1!important;overflow-y:auto!important;overflow-x:hidden!important}
+  .sidebar-nav{
+    flex:1!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+  /* Settings tabs sticky inside scroll panel */
+  .stabs{
+    position:sticky!important;
+    top:0!important;
+    z-index:10!important;
+    background:var(--bg)!important;
+    backdrop-filter:blur(12px)!important;
+    -webkit-backdrop-filter:blur(12px)!important;
+    margin-bottom:16px!important;
+  }
 }
 
-/* ── MOBILE: normal document flow, bottom nav fixed at bottom ── */
+/* MOBILE — normal document flow, NO fixed height traps */
 @media(max-width:768px){
-  #app{height:auto!important;overflow:visible!important;display:block!important;min-height:100vh!important}
+  #app{
+    height:auto!important;
+    overflow:visible!important;
+    display:block!important;
+    min-height:100vh!important;
+  }
   .main-content{
     height:auto!important;
     overflow:visible!important;
     display:block!important;
-    padding-bottom:80px!important;
   }
-  .topbar{position:sticky!important;top:0!important;z-index:30!important;flex-shrink:0!important}
+  .topbar{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+  }
   .panel{
     flex:none!important;
     overflow-y:visible!important;
     height:auto!important;
-    min-height:0!important;
   }
-  .panel.active{display:block!important}
+  .panel.active{
+    display:block!important;
+    padding-bottom:90px!important;
+  }
   #ai.active{
     display:flex!important;
     flex-direction:column!important;
-    height:calc(100vh - 57px - 60px)!important;
+    height:calc(100svh - 57px - 62px)!important;
     overflow:hidden!important;
     padding:0!important;
+    padding-bottom:0!important;
   }
   #aiMsgsWrap{flex:1!important;overflow-y:auto!important}
-  body{padding-bottom:0!important}
+  body{padding-bottom:0!important;overflow-x:hidden!important}
+  .sidebar{display:none!important}
+  .bottom-nav{
+    position:fixed!important;
+    bottom:0!important;
+    left:0!important;
+    right:0!important;
+    z-index:100!important;
+  }
+  .stabs{
+    position:sticky!important;
+    top:57px!important;
+    z-index:10!important;
+    background:var(--bg)!important;
+  }
 }
 
 /* FAB doesn't move on scroll */
@@ -635,3 +691,17 @@ button:active:not(:disabled){transform:scale(.96) translateY(0)!important}
 
 /* ══ EMAIL AUTH FORM ══ */
 .login-email-form input{margin-top:0!important;margin-bottom:8px!important}
+
+/* ══ FAB CENTERING FIX ══ */
+#fabBtn{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:1!important;
+  font-size:1.6rem!important;
+  font-weight:300!important;
+}
+#fabBtn::after{
+  content:none!important;
+}
