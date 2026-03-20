@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#0c0d12">
+<meta name="theme-color" content="#6c63ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flux">
 <meta name="description" content="Your AI-powered student school planner">
 <title>Flux Planner</title>
@@ -853,6 +853,34 @@
           <button onclick="addCollege()">+</button>
         </div>
       </div>
+
+      <!-- Extracurriculars, Awards & Achievements -->
+      <div class="card">
+        <h3>🏆 Activities, Awards & Achievements</h3>
+        <div id="extrasList" style="margin-bottom:12px"></div>
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:end">
+          <div>
+            <label style="font-size:.7rem;color:var(--muted)">Name</label>
+            <input type="text" id="extraName" placeholder="e.g. Varsity Soccer, Honor Roll..." style="margin:0">
+          </div>
+          <div>
+            <label style="font-size:.7rem;color:var(--muted)">Type</label>
+            <select id="extraType" style="margin:0">
+              <option value="activity">Activity</option>
+              <option value="award">Award</option>
+              <option value="achievement">Achievement</option>
+              <option value="leadership">Leadership</option>
+              <option value="sport">Sport</option>
+              <option value="art">Art</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.7rem;color:var(--muted)">Year</label>
+            <input type="text" id="extraYear" placeholder="e.g. 2024" style="margin:0;width:80px">
+          </div>
+          <button onclick="addExtra()" style="align-self:end;padding:10px 14px">+</button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── HABITS ─── -->
@@ -1162,6 +1190,7 @@
   </div>
 </div>
 
+<div id="privacy-footer" style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:6px;font-size:0.72rem;background:rgba(0,0,0,0.5);color:#888;z-index:99999;"><a href="privacy.html" style="color:#888;text-decoration:underline;">Privacy Policy</a> · Flux Planner</div>
 <!-- Load scripts -->
 <script src="public/js/splash.js"></script>
 <script src="public/js/app.js"></script>
