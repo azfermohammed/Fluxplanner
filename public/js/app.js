@@ -411,7 +411,7 @@ function nav(id,btn){
   document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
   const bni=document.querySelector(`.bnav-item[data-tab="${id}"]`);if(bni)bni.classList.add('active');
   const tTitle=document.getElementById('topbarTitle');if(tTitle)tTitle.textContent=PANEL_TITLES[id]||id;
-  const fns={dashboard:()=>{renderStats();renderTasks();renderCountdown();renderSmartSug();renderDynamicFocus();checkTimePoverty();renderGradeBuffer();},calendar:()=>{renderCalendar();renderCalToday();renderCalUpcoming();const gcalStatusEl=document.getElementById('gcalStatus');if(gcalStatusEl&&!gcalStatusEl.innerHTML)syncGoogleCalendar();},school:()=>renderSchool(),grades:()=>{renderGradeInputs();renderGradeOverview();renderWeightedRows();calcWeighted();},notes:()=>renderNotesList(),habits:()=>{renderHabitList();renderHeatmap();},goals:()=>{renderGoalsList();renderCollegeList();if(typeof renderExtrasList==='function')renderExtrasList();},mood:()=>{renderMoodHistory();renderAffirmation();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>{renderAISugs();initAIChats();},settings:()=>{renderNoHWList();renderTabCustomizer();},gmail:()=>loadGmail()};
+  const fns={dashboard:()=>{renderStats();renderTasks();renderCountdown();renderSmartSug();renderDynamicFocus();checkTimePoverty();renderGradeBuffer();},calendar:()=>{renderCalendar();renderCalToday();renderCalUpcoming();const gcalStatusEl=document.getElementById('gcalStatus');if(gcalStatusEl&&!gcalStatusEl.innerHTML)syncGoogleCalendar();},school:()=>renderSchool(),grades:()=>{renderGradeInputs();renderGradeOverview();renderWeightedRows();calcWeighted();},notes:()=>renderNotesList(),habits:()=>{renderHabitList();renderHeatmap();},goals:()=>{renderGoalsList();renderCollegeList();if(typeof renderExtrasList==='function')renderExtrasList();},mood:()=>{renderMoodHistory();renderAffirmation();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>{renderAISugs();initAIChats();},settings:()=>{renderNoHWList();renderTabCustomizer();renderAboutStats();},gmail:()=>loadGmail()};
   fns[id]?.();
 }
 function navMob(id){closeDrawer();nav(id);}
@@ -517,7 +517,121 @@ function addTask(){
 function toggleTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;t.done=!t.done;if(t.done){t.completedAt=Date.now();spawnConfetti();}save('tasks',tasks);renderStats();renderTasks();renderCalendar();renderCountdown();renderSmartSug();checkAllPanic();syncKey('tasks',tasks);}
 function deleteTask(id){tasks=tasks.filter(x=>x.id!==id);save('tasks',tasks);renderStats();renderTasks();renderCalendar();renderCountdown();syncKey('tasks',tasks);}
 function setFilter(f,el){taskFilter=f;document.querySelectorAll('#filterChips .tmode-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderTasks();}
-function renderStats(){const now=new Date();now.setHours(0,0,0,0);const total=tasks.length,done=tasks.filter(t=>t.done).length,over=tasks.filter(t=>!t.done&&t.date&&new Date(t.date+'T00:00:00')<now).length,high=tasks.filter(t=>!t.done&&t.priority==='high').length;document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-n" style="color:var(--accent)">${total}</div><div class="stat-l">Total</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${done}</div><div class="stat-l">Done</div></div><div class="stat"><div class="stat-n" style="color:var(--red)">${over}</div><div class="stat-l">Overdue</div></div><div class="stat"><div class="stat-n" style="color:var(--gold)">${high}</div><div class="stat-l">High Pri</div></div>`;}
+// ── TOPBAR TASK COUNT PILL ──────────────────────────────────
+function updateTopbarStats(){
+  const pill=document.getElementById('topbarTaskPill');
+  if(!pill)return;
+  const now=new Date();now.setHours(0,0,0,0);
+  const active=tasks.filter(t=>!t.done);
+  const overdue=active.filter(t=>t.date&&new Date(t.date+'T00:00:00')<now);
+  const today=active.filter(t=>t.date===todayStr());
+  if(overdue.length){
+    pill.style.display='block';
+    pill.textContent=overdue.length+' overdue';
+    pill.style.background='rgba(244,63,94,.15)';
+    pill.style.border='1px solid rgba(244,63,94,.3)';
+    pill.style.color='var(--red)';
+  } else if(today.length){
+    pill.style.display='block';
+    pill.textContent=today.length+' due today';
+    pill.style.background='rgba(251,191,36,.1)';
+    pill.style.border='1px solid rgba(251,191,36,.25)';
+    pill.style.color='var(--gold)';
+  } else if(active.length){
+    pill.style.display='block';
+    pill.textContent=active.length+' tasks';
+    pill.style.background='rgba(var(--accent-rgb),.1)';
+    pill.style.border='1px solid rgba(var(--accent-rgb),.2)';
+    pill.style.color='var(--accent)';
+  } else {
+    pill.style.display='block';
+    pill.textContent='✓ All done';
+    pill.style.background='rgba(16,217,160,.1)';
+    pill.style.border='1px solid rgba(16,217,160,.25)';
+    pill.style.color='var(--green)';
+  }
+}
+
+// ── TOPBAR NEXT CLASS PILL ───────────────────────────────────
+function updateNextClassPill(){
+  const pill=document.getElementById('topbarNextClass');
+  if(!pill||!classes||!classes.length)return;
+  const ab=AB_MAP[todayStr()];
+  if(!ab){pill.style.display='none';return;}
+  const todayClasses=classes.filter(c=>{
+    if(!c.days||c.days==='')return true;
+    if(c.days.includes('Mon-Fri'))return true;
+    if(c.days.includes(ab+' Day'))return true;
+    return false;
+  }).sort((a,b)=>(a.timeStart||'').localeCompare(b.timeStart||'')||a.period-b.period);
+  if(!todayClasses.length){pill.style.display='none';return;}
+  const now=new Date();
+  const timeStr=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const next=todayClasses.find(c=>c.timeStart&&c.timeStart>timeStr)||todayClasses[0];
+  if(!next){pill.style.display='none';return;}
+  const timeLabel=next.timeStart?fmtTime(next.timeStart):'P'+next.period;
+  pill.style.display='block';
+  pill.textContent='Next: '+next.name+' · '+timeLabel;
+}
+
+// ── SHOW TOS MODAL ───────────────────────────────────────────
+function showTOS(){
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:20px;max-width:540px;width:100%;max-height:80vh;overflow-y:auto;padding:28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:1rem;font-weight:800">Terms of Service</div>
+      <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:4px">✕</button>
+    </div>
+    <div style="font-size:.8rem;color:var(--muted2);line-height:1.9;font-family:'JetBrains Mono',monospace">
+      <div style="font-weight:700;color:var(--text);margin-bottom:6px">Last updated: March 2026</div>
+      <p>By using Flux Planner you agree to these terms. Flux is provided free of charge as a student productivity tool.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">1. Use</div>
+      <p>Flux is for personal, non-commercial educational use. You may not resell, redistribute, or misuse the platform.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">2. Your Data</div>
+      <p>You own your data. We sync it to Supabase for your convenience. You can delete it anytime from Settings → Data.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">3. Google Integrations</div>
+      <p>Gmail and Calendar access is read-only. We never send emails, create events, or modify your Google account.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">4. AI</div>
+      <p>AI responses are generated by Groq/Llama and may not always be accurate. Do not rely on AI for critical academic decisions.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">5. Limitation of Liability</div>
+      <p>Flux Planner is provided as-is. The developer (Azfer Mohammed) is not liable for any data loss or academic outcomes.</p>
+      <div style="font-weight:700;color:var(--text);margin:12px 0 4px">6. Contact</div>
+      <p>Questions? Email azfermohammed21@gmail.com</p>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.onclick=e=>{if(e.target===m)m.remove();};
+}
+
+// ── ABOUT STATS ──────────────────────────────────────────────
+function renderAboutStats(){
+  const el=document.getElementById('aboutStats');
+  if(!el)return;
+  const totalTasks=tasks.length;
+  const doneTasks=tasks.filter(t=>t.done).length;
+  const totalMins=sessionLog.reduce((s,l)=>s+l.mins,0);
+  const noteCount=notes.length;
+  const habitCount=habits.length;
+  const gradeCount=Object.keys(grades).length;
+  el.innerHTML=[
+    ['📝',totalTasks,'Total Tasks'],
+    ['✅',doneTasks,'Completed'],
+    ['⏱',Math.round(totalMins/60)+'h','Focus Time'],
+    ['📓',noteCount,'Notes'],
+    ['🔥',habitCount,'Habits'],
+    ['📊',gradeCount,'Subjects'],
+  ].map(([icon,val,label])=>`
+    <div style="padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border);text-align:center">
+      <div style="font-size:1.2rem;margin-bottom:4px">${icon}</div>
+      <div style="font-size:1.1rem;font-weight:800;color:var(--accent)">${val}</div>
+      <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace">${label}</div>
+    </div>`).join('');
+}
+
+function renderStats(){const now=new Date();now.setHours(0,0,0,0);const total=tasks.length,done=tasks.filter(t=>t.done).length,over=tasks.filter(t=>!t.done&&t.date&&new Date(t.date+'T00:00:00')<now).length,high=tasks.filter(t=>!t.done&&t.priority==='high').length;document.getElementById('statsRow').innerHTML=`<div class="stat"><div class="stat-n" style="color:var(--accent)">${total}</div><div class="stat-l">Total</div></div><div class="stat"><div class="stat-n" style="color:var(--green)">${done}</div><div class="stat-l">Done</div></div><div class="stat"><div class="stat-n" style="color:var(--red)">${over}</div><div class="stat-l">Overdue</div></div><div class="stat"><div class="stat-n" style="color:var(--gold)">${high}</div><div class="stat-l">High Pri</div></div>`;
+  if(typeof updateTopbarStats==='function')updateTopbarStats();
+}
 function renderTasks(){
   const now=new Date();now.setHours(0,0,0,0);
   let list=[...tasks];
@@ -1223,11 +1337,14 @@ function setAccent(hex,rgb,el){
   applyCustomVar('--accent-rgb',rgb);
   document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
   if(el)el.classList.add('active');
-  // Update all logo gradients to match accent
-  const logoGrad=`linear-gradient(135deg,${hex},${hex}99)`;
+  // Update all logo/title gradients to match accent
+  const logoGrad=`linear-gradient(135deg,${hex},${hex}bb)`;
   document.querySelectorAll('.sidebar-logo,.mob-drawer-logo,.login-logo,.topbar-left').forEach(el=>{
-    if(el){el.style.background=logoGrad;el.style.webkitBackgroundClip='text';el.style.webkitTextFillColor='transparent';}
+    if(el){el.style.background=logoGrad;el.style.webkitBackgroundClip='text';el.style.webkitTextFillColor='transparent';el.style.backgroundClip='text';}
   });
+  // Update task pill border color
+  const tp=document.getElementById('topbarTaskPill');
+  if(tp)tp.style.borderColor=`rgba(${rgb},.3)`;
   save('flux_accent',hex);
   save('flux_accent_rgb',rgb);
 }
@@ -2668,6 +2785,8 @@ function initDashboardFeatures(){
   document.getElementById('datePill').textContent=TODAY.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   const ab=AB_MAP[todayStr()];
   if(ab){const p=document.getElementById('abPill');p.textContent=ab+' Day';p.style.display='block';p.style.background=ab==='A'?'rgba(99,102,241,.15)':'rgba(16,217,160,.15)';p.style.color=ab==='A'?'var(--accent)':'var(--green)';p.style.border='1px solid '+(ab==='A'?'rgba(99,102,241,.3)':'rgba(16,217,160,.3)');}
+  updateTopbarStats();
+  updateNextClassPill();
   const td=document.getElementById('taskDate');if(td)td.valueAsDate=TODAY;
   setEnergy(document.getElementById('energySlider')?.value||3);
   renderStats();renderTasks();renderCalendar();renderCountdown();renderSmartSug();
