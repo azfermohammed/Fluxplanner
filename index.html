@@ -258,24 +258,19 @@
       <stop offset="100%" stop-color="#0040ff" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <!-- Lens rings -->
   <circle cx="19" cy="19" r="17" fill="none" stroke="#00d4ff" stroke-width="0.5" opacity="0.18"/>
   <circle cx="19" cy="19" r="13" fill="none" stroke="#00ccff" stroke-width="0.8" opacity="0.28"/>
   <circle cx="19" cy="19" r="9"  fill="none" stroke="#00ddff" stroke-width="1"   opacity="0.45"/>
   <circle cx="19" cy="19" r="5.5" fill="none" stroke="#00eeff" stroke-width="1.3" opacity="0.65"/>
-  <!-- Segmented arcs -->
   <path d="M19 2.2A16.8 16.8 0 0 1 31.5 7"  fill="none" stroke="#00c8ff" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
   <path d="M19 35.8A16.8 16.8 0 0 1 6.5 31" fill="none" stroke="#00c8ff" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
-  <!-- Crosshair ticks -->
   <line x1="19" y1="1"  x2="19" y2="5.5"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="19" y1="32.5" x2="19" y2="37" stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="1"  y1="19" x2="5.5" y2="19"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="32.5" y1="19" x2="37" y2="19"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
-  <!-- Core glow -->
   <circle cx="19" cy="19" r="9" fill="url(#fluxCG)" opacity="0.4"/>
   <circle cx="19" cy="19" r="2.5" fill="#00eeff" opacity="0.9"/>
   <circle cx="19" cy="19" r="1.2" fill="white"/>
-  <!-- Wordmark -->
   <text x="46" y="27"
     font-family="'Plus Jakarta Sans',system-ui,sans-serif"
     font-size="22"
@@ -326,41 +321,36 @@
     <div class="mob-drawer-header">
       <span class="mob-drawer-logo" style="-webkit-text-fill-color:initial;background:none;line-height:1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 38" width="148" height="38" aria-label="Flux">
   <defs>
-    <linearGradient id="fluxWG" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="fluxWG2" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="55%" stop-color="#00d4ff"/>
       <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
-    <radialGradient id="fluxCG" cx="50%" cy="50%" r="50%">
+    <radialGradient id="fluxCG2" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#ffffff"/>
       <stop offset="40%" stop-color="#00e5ff"/>
       <stop offset="100%" stop-color="#0040ff" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <!-- Lens rings -->
   <circle cx="19" cy="19" r="17" fill="none" stroke="#00d4ff" stroke-width="0.5" opacity="0.18"/>
   <circle cx="19" cy="19" r="13" fill="none" stroke="#00ccff" stroke-width="0.8" opacity="0.28"/>
   <circle cx="19" cy="19" r="9"  fill="none" stroke="#00ddff" stroke-width="1"   opacity="0.45"/>
   <circle cx="19" cy="19" r="5.5" fill="none" stroke="#00eeff" stroke-width="1.3" opacity="0.65"/>
-  <!-- Segmented arcs -->
   <path d="M19 2.2A16.8 16.8 0 0 1 31.5 7"  fill="none" stroke="#00c8ff" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
   <path d="M19 35.8A16.8 16.8 0 0 1 6.5 31" fill="none" stroke="#00c8ff" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
-  <!-- Crosshair ticks -->
   <line x1="19" y1="1"  x2="19" y2="5.5"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="19" y1="32.5" x2="19" y2="37" stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="1"  y1="19" x2="5.5" y2="19"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
   <line x1="32.5" y1="19" x2="37" y2="19"  stroke="#00d4ff" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
-  <!-- Core glow -->
-  <circle cx="19" cy="19" r="9" fill="url(#fluxCG)" opacity="0.4"/>
+  <circle cx="19" cy="19" r="9" fill="url(#fluxCG2)" opacity="0.4"/>
   <circle cx="19" cy="19" r="2.5" fill="#00eeff" opacity="0.9"/>
   <circle cx="19" cy="19" r="1.2" fill="white"/>
-  <!-- Wordmark -->
   <text x="46" y="27"
     font-family="'Plus Jakarta Sans',system-ui,sans-serif"
     font-size="22"
     font-weight="800"
     letter-spacing="-1"
-    fill="url(#fluxWG)">Flux</text>
+    fill="url(#fluxWG2)">Flux</text>
 </svg></span>
       <button class="mob-drawer-close" onclick="closeDrawer()">✕</button>
     </div>
@@ -1336,4 +1326,14 @@
     <div class="modal-title">Update Goal Progress</div>
     <div class="mrow"><label>Current Progress</label><input type="number" id="goalProgressInput" min="0" max="9999" step="0.1"></div>
     <div id="goalProgressLabel" style="font-size:.78rem;color:var(--muted2);margin-bottom:10px"></div>
-    <div class="mactions"><button onclick="closeGoalModal()" class="btn-sec">Cancel</button><button onclick="saveGoalProgress()">Save</button><
+    <div class="mactions"><button onclick="closeGoalModal()" class="btn-sec">Cancel</button><button onclick="saveGoalProgress()">Save</button>
+</div>
+    <div class="mactions"><button onclick="closeGoalModal()" class="btn-sec">Cancel</button><button onclick="saveGoalProgress()">Save</button></div>
+  </div>
+</div>
+
+<!-- Load scripts -->
+<script src="public/js/splash.js"></script>
+<script src="public/js/app.js"></script>
+</body>
+</html>
