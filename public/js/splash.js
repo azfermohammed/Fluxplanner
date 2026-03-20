@@ -1,245 +1,278 @@
-/* ── FLUX PLANNER · splash.js — full redesign ── */
+/* ── FLUX PLANNER · splash.js — Flux Weapon Charging ── */
 window.runSplash = function(callback) {
   const splash = document.getElementById('splash');
   if (!splash) { callback(); return; }
 
   const metaTheme = document.querySelector('meta[name="theme-color"]');
-  if (metaTheme) metaTheme.setAttribute('content', '#05060f');
+  if (metaTheme) metaTheme.setAttribute('content', '#000508');
 
-  splash.style.cssText = 'position:fixed;inset:0;background:#05060f;z-index:9999;overflow:hidden;display:flex;align-items:center;justify-content:center';
+  splash.style.cssText = 'position:fixed;inset:0;background:#000508;z-index:9999;overflow:hidden;display:flex;align-items:center;justify-content:center';
 
   splash.innerHTML = `
     <canvas id="sCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
-
-    <!-- Central content — absolutely centered as a unit -->
-    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px;">
-
-      <!-- Icon mark -->
-      <div id="sMark" style="
-        width:64px;height:64px;border-radius:18px;
-        background:linear-gradient(135deg,#6366f1,#a78bfa 50%,#10d9a0);
-        display:flex;align-items:center;justify-content:center;
-        margin-bottom:22px;
-        opacity:0;transform:scale(0.4) rotate(-15deg);
-        transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);
-        box-shadow:0 0 0 1px rgba(255,255,255,.1),0 20px 60px rgba(99,102,241,.5);
-        flex-shrink:0;
-      ">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M8 8h16v4H12v4h10v4H12v8H8V8z" fill="white" opacity="0.95"/>
-          <circle cx="24" cy="24" r="3" fill="#10d9a0"/>
-        </svg>
-      </div>
-
-      <!-- App name — single line, perfectly centered -->
-      <div id="sName" style="
+    <div id="sLogo" style="
+      position:relative;z-index:2;
+      display:flex;flex-direction:column;align-items:center;
+      opacity:0;
+      transition:opacity .8s ease;
+    ">
+      <!-- Static lens icon -->
+      <svg id="sIcon" width="72" height="72" viewBox="0 0 72 72" style="margin-bottom:16px;filter:drop-shadow(0 0 18px #00d4ff) drop-shadow(0 0 6px #0080ff);opacity:0;transform:scale(0.6);transition:opacity .6s ease .1s, transform .7s cubic-bezier(.16,1,.3,1) .1s">
+        <circle cx="36" cy="36" r="34" fill="none" stroke="rgba(0,180,255,.15)" stroke-width="1"/>
+        <circle cx="36" cy="36" r="26" fill="none" stroke="rgba(0,200,255,.25)" stroke-width="1.5"/>
+        <circle cx="36" cy="36" r="18" fill="none" stroke="rgba(0,220,255,.4)" stroke-width="2"/>
+        <circle cx="36" cy="36" r="10" fill="none" stroke="rgba(0,240,255,.6)" stroke-width="2.5"/>
+        <circle cx="36" cy="36" r="4" fill="#00e5ff" style="filter:blur(1px)"/>
+        <circle cx="36" cy="36" r="2" fill="white"/>
+        <!-- crosshair lines -->
+        <line x1="36" y1="2" x2="36" y2="14" stroke="rgba(0,220,255,.5)" stroke-width="1"/>
+        <line x1="36" y1="58" x2="36" y2="70" stroke="rgba(0,220,255,.5)" stroke-width="1"/>
+        <line x1="2" y1="36" x2="14" y2="36" stroke="rgba(0,220,255,.5)" stroke-width="1"/>
+        <line x1="58" y1="36" x2="70" y2="36" stroke="rgba(0,220,255,.5)" stroke-width="1"/>
+      </svg>
+      <div id="sWordmark" style="
         font-family:'Plus Jakarta Sans',sans-serif;
-        font-size:clamp(2.8rem,10vw,4.5rem);
+        font-size:clamp(2rem,8vw,3.2rem);
         font-weight:800;
         letter-spacing:-0.04em;
-        line-height:1;
-        color:#ffffff;
-        opacity:0;
-        transform:translateY(20px);
-        transition:opacity .55s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1);
-        white-space:nowrap;
-      ">Flux Planner</div>
-
-      <!-- Subtitle line -->
-      <div id="sSub" style="
+        background:linear-gradient(90deg,#fff 0%,#00d4ff 50%,#0066ff 100%);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        background-clip:text;
+        opacity:0;transform:translateY(12px);
+        transition:opacity .6s ease .5s, transform .6s cubic-bezier(.16,1,.3,1) .5s;
+      ">Flux</div>
+      <div id="sTagline" style="
         font-family:'JetBrains Mono',monospace;
-        font-size:clamp(.6rem,2vw,.75rem);
-        letter-spacing:0.3em;
-        color:rgba(255,255,255,.28);
+        font-size:clamp(.55rem,1.8vw,.7rem);
+        letter-spacing:.35em;
+        color:rgba(0,180,255,.4);
         text-transform:uppercase;
-        margin-top:12px;
+        margin-top:8px;
         opacity:0;
-        transform:translateY(10px);
-        transition:opacity .5s ease,transform .5s ease;
-      ">AI-powered school planner</div>
-
-      <!-- Progress bar -->
-      <div style="margin-top:40px;width:120px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
-        <div id="sBar" style="
-          height:100%;width:0%;
-          background:linear-gradient(90deg,#6366f1,#a78bfa,#10d9a0);
-          border-radius:2px;
-          transition:width 2.2s cubic-bezier(.4,0,.2,1);
-        "></div>
-      </div>
-
+        transition:opacity .5s ease .9s;
+      ">Smart School Planner</div>
     </div>
-
     <style>
-      @keyframes aurora {
-        0%   { transform:translate(0,0) scale(1) rotate(0deg); }
-        33%  { transform:translate(40px,-30px) scale(1.08) rotate(5deg); }
-        66%  { transform:translate(-30px,20px) scale(.95) rotate(-3deg); }
-        100% { transform:translate(0,0) scale(1) rotate(0deg); }
-      }
-      @keyframes auroraSlow {
-        0%   { transform:translate(0,0) scale(1); }
-        50%  { transform:translate(-50px,40px) scale(1.1); }
-        100% { transform:translate(0,0) scale(1); }
-      }
+      @keyframes rotCW  { from{transform:rotate(0)}   to{transform:rotate(360deg)} }
+      @keyframes rotCCW { from{transform:rotate(0)}   to{transform:rotate(-360deg)} }
+      @keyframes pulse  { 0%,100%{opacity:.4} 50%{opacity:1} }
     </style>
   `;
 
-  // ── Canvas: aurora + grid ────────────────────────────────────
+  // ── Canvas ──────────────────────────────────────────────────
   const canvas = document.getElementById('sCanvas');
   const ctx    = canvas.getContext('2d');
-  let W, H, animId, tick = 0;
+  let W, H, cx, cy, animId, tick = 0;
+  let phase = 0; // 0=tunnel charging, 1=flash, 2=logo reveal, 3=done
 
   function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
+    cx = W / 2; cy = H / 2;
   }
   resize();
   window.addEventListener('resize', resize);
 
-  // Shooting stars
-  const shots = [];
-  function addShot() {
-    const side = Math.random() > .5;
-    shots.push({
-      x: Math.random() * W,
-      y: Math.random() * H * .5,
-      vx: (Math.random() * 4 + 3) * (side ? 1 : -1),
-      vy: Math.random() * 2 + 1,
-      len: Math.random() * 100 + 60,
-      life: 0, max: Math.random() * 40 + 25,
-      w: Math.random() * 1.5 + .5
-    });
-  }
+  // Ring system — each ring has a radius, speed, opacity, thickness, color
+  const RING_COUNT = 14;
+  const rings = Array.from({length: RING_COUNT}, (_, i) => ({
+    baseR: 40 + i * (Math.min(W,H) * 0.045),
+    phase: (i / RING_COUNT) * Math.PI * 2,
+    speed: 0.4 + Math.random() * 0.3,
+    thickness: 1 + (RING_COUNT - i) * 0.25,
+    segments: 3 + Math.floor(Math.random() * 4),
+    rot: Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 0.015,
+    alive: false,
+    birthTick: i * 8,
+  }));
 
-  // Grid dots
-  const GRID_SPACING = 48;
-  let gridDots = [];
-  function buildGrid() {
-    gridDots = [];
-    const cols = Math.ceil(W / GRID_SPACING) + 1;
-    const rows = Math.ceil(H / GRID_SPACING) + 1;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        gridDots.push({ x: c * GRID_SPACING, y: r * GRID_SPACING, phase: Math.random() * Math.PI * 2 });
+  // Depth lines (tunnel effect - lines converging to center)
+  const LINES = 24;
+  const tunnelLines = Array.from({length: LINES}, (_, i) => ({
+    angle: (i / LINES) * Math.PI * 2,
+    alpha: 0,
+  }));
+
+  // Particles streaming toward center
+  const particles = Array.from({length: 60}, () => ({
+    angle: Math.random() * Math.PI * 2,
+    dist: Math.random() * Math.min(W,H) * 0.5 + 100,
+    speed: Math.random() * 2 + 1,
+    alpha: Math.random(),
+    size: Math.random() * 1.5 + 0.3,
+  }));
+
+  let flashAlpha = 0;
+  let chargeProgress = 0; // 0-1
+
+  function drawRing(r, alpha, thickness, segments, rot, color) {
+    if (segments === 0) {
+      // Full circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = color.replace('A', `,${alpha})`).replace('rgb', 'rgba');
+      ctx.lineWidth = thickness;
+      ctx.stroke();
+    } else {
+      // Segmented ring
+      const gap = 0.18;
+      for (let s = 0; s < segments; s++) {
+        const start = rot + (s / segments) * Math.PI * 2;
+        const end   = start + (Math.PI * 2 / segments) - gap;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, start, end);
+        ctx.strokeStyle = `rgba(0,200,255,${alpha})`;
+        ctx.lineWidth = thickness;
+        ctx.stroke();
       }
     }
   }
-  buildGrid();
 
   function frame() {
     tick++;
+    chargeProgress = Math.min(tick / 140, 1);
+
     ctx.clearRect(0, 0, W, H);
 
-    // Aurora blobs
-    const blobs = [
-      { x: W * .2, y: H * .3, r: W * .45, c: '99,102,241', a: .1 },
-      { x: W * .8, y: H * .7, r: W * .4,  c: '16,217,160', a: .07 },
-      { x: W * .6, y: H * .15, r: W * .35, c: '167,139,250', a: .06 },
-    ];
-    blobs.forEach((b, i) => {
-      const ox = Math.sin(tick * .008 + i * 2.1) * 60;
-      const oy = Math.cos(tick * .006 + i * 1.7) * 40;
-      const grd = ctx.createRadialGradient(b.x+ox, b.y+oy, 0, b.x+ox, b.y+oy, b.r);
-      grd.addColorStop(0, `rgba(${b.c},${b.a})`);
-      grd.addColorStop(1, `rgba(${b.c},0)`);
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, H);
+    // Background gradient — dark center, very dark edge (barrel depth)
+    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W,H) * 0.6);
+    bg.addColorStop(0, `rgba(0,8,20,${0.3 + chargeProgress * 0.5})`);
+    bg.addColorStop(0.5, `rgba(0,4,12,0.95)`);
+    bg.addColorStop(1, 'rgba(0,0,4,1)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Tunnel depth lines (radiate from center outward, faint)
+    const lineAlpha = Math.min(chargeProgress * 0.8, 0.12);
+    tunnelLines.forEach(l => {
+      const farX = cx + Math.cos(l.angle) * Math.max(W, H);
+      const farY = cy + Math.sin(l.angle) * Math.max(W, H);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(farX, farY);
+      ctx.strokeStyle = `rgba(0,150,255,${lineAlpha})`;
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
     });
 
-    // Subtle grid dots
-    const cx = W / 2, cy = H / 2;
-    gridDots.forEach(d => {
-      const dist = Math.sqrt((d.x-cx)**2 + (d.y-cy)**2);
-      const maxDist = Math.sqrt(cx**2 + cy**2);
-      const fade = Math.max(0, 1 - dist / maxDist * 1.4);
-      const pulse = .3 + Math.sin(tick * .04 + d.phase) * .15;
+    // Charging rings — appear from outside, contract toward center
+    rings.forEach((ring, i) => {
+      if (tick < ring.birthTick) return;
+      ring.rot += ring.rotSpeed;
+      const age = tick - ring.birthTick;
+      const ageProgress = Math.min(age / 80, 1);
+
+      // Ring contracts slightly as charge builds
+      const contraction = chargeProgress * 18;
+      const r = ring.baseR - contraction + Math.sin(tick * 0.04 + ring.phase) * 4;
+      if (r < 8) return;
+
+      const alpha = ageProgress * (0.2 + chargeProgress * 0.6) * (0.5 + 0.5 * Math.sin(tick * 0.06 + ring.phase));
+      const thickness = ring.thickness * (0.8 + chargeProgress * 0.5);
+
+      // Glow behind ring
+      ctx.shadowBlur = 8 + chargeProgress * 12;
+      ctx.shadowColor = `rgba(0,180,255,${alpha * 0.8})`;
+
+      drawRing(r, Math.min(alpha, 0.85), thickness, ring.segments, ring.rot, 'rgba(0,200,255,A)');
+      ctx.shadowBlur = 0;
+    });
+
+    // Inner charging rings (solid, closer to center)
+    for (let ri = 0; ri < 5; ri++) {
+      const r = 15 + ri * 14 + Math.sin(tick * 0.05 + ri) * 3;
+      const a = chargeProgress * (0.3 + ri * 0.12) * (0.6 + 0.4 * Math.sin(tick * 0.08 + ri * 0.7));
+      ctx.shadowBlur = 6 + ri * 3;
+      ctx.shadowColor = `rgba(0,220,255,${a})`;
       ctx.beginPath();
-      ctx.arc(d.x, d.y, 1, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(99,102,241,${fade * pulse * .4})`;
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${ri < 2 ? '0,240,255' : '100,200,255'},${a})`;
+      ctx.lineWidth = 1.5 - ri * 0.2;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Particles streaming toward center
+    particles.forEach(p => {
+      p.dist -= p.speed * (1 + chargeProgress * 2);
+      if (p.dist < 5) {
+        p.dist = Math.random() * Math.min(W,H) * 0.55 + 80;
+        p.angle = Math.random() * Math.PI * 2;
+      }
+      const px = cx + Math.cos(p.angle) * p.dist;
+      const py = cy + Math.sin(p.angle) * p.dist;
+      const a = chargeProgress * p.alpha * (1 - p.dist / (Math.min(W,H) * 0.55));
+      if (a < 0.01) return;
+      ctx.beginPath();
+      ctx.arc(px, py, p.size * (1 + chargeProgress), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,200,255,${a})`;
       ctx.fill();
     });
 
-    // Grid lines (very faint)
-    ctx.strokeStyle = 'rgba(99,102,241,0.025)';
-    ctx.lineWidth = .5;
-    for (let x = 0; x < W; x += GRID_SPACING) {
-      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-    }
-    for (let y = 0; y < H; y += GRID_SPACING) {
-      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-    }
-
-    // Shooting stars
-    if (tick % 45 === 0 && shots.length < 6) addShot();
-    for (let i = shots.length - 1; i >= 0; i--) {
-      const s = shots[i];
-      s.life++;
-      const t = s.life / s.max;
-      const alpha = t < .15 ? t/.15 : t > .7 ? 1-(t-.7)/.3 : 1;
-      const tx = s.x + s.vx * s.life;
-      const ty = s.y + s.vy * s.life;
-      const tailX = tx - s.vx * (s.len / Math.sqrt(s.vx**2+s.vy**2));
-      const tailY = ty - s.vy * (s.len / Math.sqrt(s.vx**2+s.vy**2));
-      const g = ctx.createLinearGradient(tailX, tailY, tx, ty);
-      g.addColorStop(0, 'rgba(255,255,255,0)');
-      g.addColorStop(.7, `rgba(200,210,255,${alpha * .5})`);
-      g.addColorStop(1, `rgba(255,255,255,${alpha * .9})`);
-      ctx.beginPath();
-      ctx.strokeStyle = g;
-      ctx.lineWidth = s.w;
-      ctx.moveTo(tailX, tailY);
-      ctx.lineTo(tx, ty);
-      ctx.stroke();
-      if (s.life >= s.max) shots.splice(i, 1);
-    }
-
-    // Center radial glow (breathes)
-    const breathe = .06 + Math.sin(tick * .03) * .02;
-    const cg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.min(W,H) * .4);
-    cg.addColorStop(0, `rgba(99,102,241,${breathe})`);
-    cg.addColorStop(1, 'rgba(99,102,241,0)');
+    // Center glow — intensifies as charge builds
+    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 + chargeProgress * 60);
+    cg.addColorStop(0, `rgba(0,220,255,${0.08 + chargeProgress * 0.25})`);
+    cg.addColorStop(0.4, `rgba(0,120,255,${0.04 + chargeProgress * 0.12})`);
+    cg.addColorStop(1, 'rgba(0,0,255,0)');
     ctx.fillStyle = cg;
     ctx.fillRect(0, 0, W, H);
 
+    // Core bright point
+    const coreA = chargeProgress * (0.5 + Math.sin(tick * 0.1) * 0.3);
+    const coreGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 20 + chargeProgress * 15);
+    coreGrd.addColorStop(0, `rgba(255,255,255,${coreA})`);
+    coreGrd.addColorStop(0.3, `rgba(0,220,255,${coreA * 0.7})`);
+    coreGrd.addColorStop(1, 'rgba(0,100,255,0)');
+    ctx.fillStyle = coreGrd;
+    ctx.fillRect(0, 0, W, H);
+
+    // Phase 1: FLASH at full charge
+    if (chargeProgress >= 1 && flashAlpha < 1) {
+      flashAlpha = Math.min(flashAlpha + 0.08, 1);
+      ctx.fillStyle = `rgba(0,200,255,${flashAlpha * 0.7})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = `rgba(255,255,255,${flashAlpha * 0.4})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // After flash peaks, reveal logo
+    if (flashAlpha >= 0.9 && phase < 2) {
+      phase = 2;
+      const logo = document.getElementById('sLogo');
+      const icon = document.getElementById('sIcon');
+      const word = document.getElementById('sWordmark');
+      const tag  = document.getElementById('sTagline');
+      if (logo) logo.style.opacity = '1';
+      if (icon) { icon.style.opacity = '1'; icon.style.transform = 'scale(1)'; }
+      if (word) { word.style.opacity = '1'; word.style.transform = 'translateY(0)'; }
+      if (tag)  tag.style.opacity = '1';
+    }
+
+    // Flash fades out
+    if (flashAlpha >= 1) {
+      flashAlpha = Math.max(flashAlpha - 0.03, 0);
+      if (flashAlpha > 0) {
+        ctx.fillStyle = `rgba(0,180,255,${flashAlpha * 0.5})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
     animId = requestAnimationFrame(frame);
   }
+
   animId = requestAnimationFrame(frame);
 
-  // ── Staggered reveals ───────────────────────────────────────
-  const show = (id, delay, extra) => setTimeout(() => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.opacity = '1';
-    el.style.transform = 'none';
-    if (extra) extra(el);
-  }, delay);
-
-  // Icon bounces in first
-  show('sMark', 150);
-
-  // Name slides up
-  show('sName', 420);
-
-  // Subtitle fades
-  show('sSub', 700);
-
-  // Progress bar fills
-  setTimeout(() => {
-    const bar = document.getElementById('sBar');
-    if (bar) bar.style.width = '100%';
-  }, 800);
-
-  // ── Exit ────────────────────────────────────────────────────
+  // Exit after logo has been visible for ~1.8s (total ~3.8s)
   setTimeout(() => {
     window.removeEventListener('resize', resize);
     cancelAnimationFrame(animId);
-    splash.style.transition = 'opacity .5s ease, transform .5s ease';
+    splash.style.transition = 'opacity .6s ease, transform .6s ease';
     splash.style.opacity = '0';
-    splash.style.transform = 'scale(1.03)';
+    splash.style.transform = 'scale(1.04)';
     setTimeout(() => {
       splash.style.display = 'none';
       callback();
-    }, 500);
-  }, 3200);
+    }, 620);
+  }, 3800);
 };
