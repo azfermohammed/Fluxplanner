@@ -2498,18 +2498,18 @@ async function signInWithGoogle(){
   const sb=getSB();
   if(!sb){alert('Supabase not loaded yet — please refresh the page.');return;}
   try{
-    const redirectTo=getRedirectURL();
-    // skipBrowserRedirect:false ensures same tab redirect (not new tab)
-    const{error}=await sb.auth.signInWithOAuth({
+    // Always use the exact GitHub Pages URL as redirect
+    const redirectTo='https://azfermohammed.github.io/Fluxplanner/';
+    const{data,error}=await sb.auth.signInWithOAuth({
       provider:'google',
       options:{
         redirectTo,
-        skipBrowserRedirect:false,
         scopes:'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly',
         queryParams:{access_type:'offline',prompt:'select_account'}
       }
     });
     if(error)throw error;
+    // Supabase will redirect the current tab to Google — no new tab needed
   }catch(e){
     console.error('OAuth error:',e);
     alert('Sign in failed: '+e.message);
@@ -2576,8 +2576,16 @@ async function initAuth(){
     if(session?.user)await handleSignedIn(session.user,session);
     else showLoginOrApp();
     sb.auth.onAuthStateChange(async(event,s)=>{
-      if(event==='SIGNED_IN'&&s?.user)await handleSignedIn(s.user,s);
+      if(event==='SIGNED_IN'&&s?.user){
+        // Hide login screen immediately on OAuth callback
+        const ls=document.getElementById('loginScreen');if(ls)ls.classList.remove('visible');
+        await handleSignedIn(s.user,s);
+      }
       else if(event==='SIGNED_OUT')handleSignedOut();
+      else if(event==='TOKEN_REFRESHED'&&s?.user&&currentUser){
+        // Keep user UI fresh on token refresh
+        _updateUserUI(s.user,s.user.user_metadata?.full_name||s.user.email?.split('@')[0]);
+      }
     });
   }catch(e){
     console.error('Auth init error:',e);
@@ -2675,28 +2683,39 @@ async function handleSignedIn(user,session){
 function _updateUserUI(user,name){
   const firstName=(name||user.email?.split('@')[0]||'User').split(' ')[0];
   localStorage.setItem('flux_user_name',firstName);
-  const sav=document.getElementById('sidebarAv');if(sav){if(user.user_metadata?.avatar_url)sav.innerHTML=`<img src="${user.user_metadata.avatar_url}" referrerpolicy="no-referrer">`;else sav.textContent=firstName.charAt(0).toUpperCase();}
+  // Avatar — use Google profile pic if available
+  const avatarUrl=user.user_metadata?.avatar_url||user.user_metadata?.picture||'';
+  const avatarHTML=avatarUrl
+    ?`<img src="${avatarUrl}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    :`<span style="font-size:.9rem;font-weight:700">${firstName.charAt(0).toUpperCase()}</span>`;
+  // Sidebar user card
+  const sav=document.getElementById('sidebarAv');if(sav)sav.innerHTML=avatarHTML;
   const sn=document.getElementById('sidebarName');if(sn)sn.textContent=name||firstName;
   const se=document.getElementById('sidebarEmail');if(se)se.textContent=user.email||'';
-  const mav=document.getElementById('mobAv');if(mav){if(user.user_metadata?.avatar_url)mav.innerHTML=`<img src="${user.user_metadata.avatar_url}" referrerpolicy="no-referrer">`;else mav.textContent=firstName.charAt(0).toUpperCase();}
+  // Mobile drawer user card
+  const mav=document.getElementById('mobAv');if(mav)mav.innerHTML=avatarHTML;
   const mn=document.getElementById('mobName');if(mn)mn.textContent=name||firstName;
   const me=document.getElementById('mobEmail');if(me)me.textContent=user.email||'';
+  // Settings account section
   const asd=document.getElementById('accountSignedOut');if(asd)asd.style.display='none';
   const asi=document.getElementById('accountSignedIn');if(asi)asi.style.display='block';
   const emailEl=document.getElementById('accountEmail');if(emailEl)emailEl.textContent=user.email||'';
+  // Also update any topbar user indicators
+  const topUser=document.getElementById('topbarUser');if(topUser)topUser.textContent=firstName;
 }
 
 function handleSignedOut(){
   currentUser=null;gmailToken=null;
-  // Clear ALL local state so login screen always shows
+  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
   sessionStorage.clear();
+  // Keep only device prefs, wipe all user data
   const keysToKeep=['flux_splash_shown','flux_theme','flux_accent','flux_accent_rgb'];
   const kept={};
   keysToKeep.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)kept[k]=v;});
   localStorage.clear();
   Object.entries(kept).forEach(([k,v])=>localStorage.setItem(k,v));
-  // Hard redirect to root — cleanest possible reset
-  window.location.replace(window.location.origin+window.location.pathname);
+  // Force hard reload — page restarts fresh, initAuth sees no session, shows login
+  window.location.href='https://azfermohammed.github.io/Fluxplanner/';
 }
 
 // ══ FEATURE PILLS — injected into login screen ══
