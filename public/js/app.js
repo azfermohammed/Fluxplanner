@@ -462,7 +462,15 @@ function renderSidebars(){
       +`<button class="bnav-item" onclick="openDrawer()" id="moreBtn"><span class="bni">☰</span>More</button>`;
   }
 }
-function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;save('flux_sidebar_collapsed',sidebarCollapsed);const sb=document.getElementById('sidebar');if(sb)sb.classList.toggle('collapsed',sidebarCollapsed);}
+function toggleSidebar(){
+  sidebarCollapsed=!sidebarCollapsed;
+  save('flux_sidebar_collapsed',sidebarCollapsed);
+  const sb=document.getElementById('sidebar');
+  if(sb)sb.classList.toggle('collapsed',sidebarCollapsed);
+  // Update toggle button icon
+  const btn=document.querySelector('.sidebar-toggle');
+  if(btn)btn.textContent=sidebarCollapsed?'»':'☰';
+}
 
 // ── Sidebar resize (drag handle) ──
 function initSidebarResize(){
@@ -1717,10 +1725,14 @@ function updateDynamicFocus(){
 }
 
 // ── TIME POVERTY DETECTOR ─// ══ AI CHAT HISTORY / TABS ══
-let aiChats=load('flux_ai_chats',[]);
+let aiChats=[];
+function getAIChatKey(){return currentUser?'flux_ai_chats_'+currentUser.id:'flux_ai_chats_guest';}
+function loadAIChatsForUser(){aiChats=load(getAIChatKey(),[]);if(!Array.isArray(aiChats))aiChats=[];}
+function saveAIChats(){save(getAIChatKey(),aiChats);}
 let aiCurrentChatId=null;
 
 function initAIChats(){
+  loadAIChatsForUser();
   if(!aiChats.length)newAIChat();
   else loadAIChat(aiChats[0].id);
   renderAIChatTabs();
@@ -1731,7 +1743,7 @@ function newAIChat(){
   const chat={id,title:'New Chat',messages:[],createdAt:Date.now()};
   aiChats.unshift(chat);
   if(aiChats.length>10)aiChats=aiChats.slice(0,10); // keep last 10
-  save('flux_ai_chats',aiChats);
+  saveAIChats();
   loadAIChat(id);
   renderAIChatTabs();
 }
@@ -1768,14 +1780,14 @@ function saveCurrentChat(){
     chat.title=firstUser.content.slice(0,30)+(firstUser.content.length>30?'…':'');
   }
   chat.updatedAt=Date.now();
-  save('flux_ai_chats',aiChats);
+  saveAIChats();
   renderAIChatTabs();
 }
 
 function deleteAIChat(id,e){
   e?.stopPropagation();
   aiChats=aiChats.filter(c=>c.id!==id);
-  save('flux_ai_chats',aiChats);
+  saveAIChats();
   if(aiCurrentChatId===id){
     if(aiChats.length)loadAIChat(aiChats[0].id);
     else newAIChat();
@@ -1801,7 +1813,7 @@ function clearAIChat(){
   // Reset current chat
   if(aiCurrentChatId){
     const chat=aiChats.find(c=>c.id===aiCurrentChatId);
-    if(chat){chat.messages=[];chat.title='New Chat';save('flux_ai_chats',aiChats);renderAIChatTabs();}
+    if(chat){chat.messages=[];chat.title='New Chat';saveAIChats();renderAIChatTabs();}
   }
 }
 function fmtAI(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/^### (.+)$/gm,'<strong style="display:block;margin-top:8px;margin-bottom:2px">$1</strong>').replace(/^- (.+)$/gm,'<li style="margin-left:14px;margin-bottom:3px">$1</li>').replace(/Q:\s*(.+)/g,'<strong style="color:var(--accent)">Q:</strong> $1').replace(/A:\s*(.+)/g,'<strong style="color:var(--green)">A:</strong> $1').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');}
@@ -1922,6 +1934,8 @@ function setSyncStatus(status){
   if(signedOutMsg){signedOutMsg.style.display=wasGuest&&!currentUser?'none':'block';}
 }
 function getCloudPayload(){
+  // Strip device-only prefs from settings before syncing
+  const {theme:_t, accent:_a, accentRgb:_ar, ...syncableSettings} = settings;
   return{
     tasks,
     grades,
@@ -1938,10 +1952,10 @@ function getCloudPayload(){
     studyDNA,
     confidences,
     sessionLog,
-    onboarded:true, // always true if we're syncing — means account is set up
+    onboarded:true,
     noHWDays:load('flux_no_hw_days',[]),
     events:load('flux_events',[]),
-    settings,
+    settings:syncableSettings,
     ...(isOwner()?{devAccounts:load('flux_dev_accounts',[]),ownerEmail:OWNER_EMAIL}:{}),
   };
 }
@@ -1974,7 +1988,13 @@ async function forceSyncNow(){
   if(btn){btn.textContent='Syncing...';btn.disabled=true;}
   await syncToCloud();
   await syncFromCloud();
-  if(btn){btn.textContent='✓ Done';setTimeout(()=>{btn.textContent='Force Sync Now';btn.disabled=false;},2000);}
+  // Re-render everything so pulled data appears immediately without refresh
+  renderStats();renderTasks();renderCalendar();renderCountdown();renderSmartSug();
+  renderProfile();renderGradeInputs();renderGradeOverview();renderNotesList();
+  renderHabitList();renderGoalsList();renderCollegeList();renderMoodHistory();
+  renderSchool();updateTStats();populateSubjectSelects();
+  if(btn){btn.textContent='✓ Synced';setTimeout(()=>{btn.textContent='Force Sync Now';btn.disabled=false;},2000);}
+  showToast('✓ Data synced');
 }
 async function syncFromCloud(){
   if(!currentUser)return;
@@ -2001,7 +2021,12 @@ async function syncFromCloud(){
     if(d.sessionLog){sessionLog=d.sessionLog;save('flux_session_log',sessionLog);}
     if(d.noHWDays){save('flux_no_hw_days',d.noHWDays);}
     if(d.events){save('flux_events',d.events);}
-    if(d.settings){settings={...settings,...d.settings};save('flux_settings',settings);}
+    if(d.settings){
+      // Never overwrite device-local theme/accent from cloud
+      const {theme:_t, accent:_a, accentRgb:_ar, flux_accent:_fa, flux_theme:_ft, ...cloudSettings} = d.settings;
+      settings={...settings,...cloudSettings};
+      save('flux_settings',settings);
+    }
     if(d.onboarded)save('flux_onboarded',true);
     // Load devAccounts — owner's list syncs to all dev accounts too
     if(d.devAccounts)save('flux_dev_accounts',d.devAccounts);
@@ -2024,7 +2049,10 @@ const syncDebounceTimers={};
 function syncKey(key,val){
   if(!currentUser)return;
   clearTimeout(syncDebounceTimers[key]);
-  syncDebounceTimers[key]=setTimeout(()=>syncToCloud(),3000);
+  // Sync after 1.5s of inactivity (was 3s — faster feedback)
+  syncDebounceTimers[key]=setTimeout(async()=>{
+    await syncToCloud();
+  },1500);
 }
 
 // ══ ONBOARDING ══
@@ -2442,15 +2470,16 @@ async function signInWithGoogle(){
 
 async function signOut(){
   if(!confirm('Sign out?'))return;
-  // Clear ALL local flags before signing out
+  const sb=getSB();
+  if(sb) await sb.auth.signOut();
+  // Wipe all personal flags
   localStorage.removeItem('flux_was_guest');
   localStorage.removeItem('flux_onboarded');
   localStorage.removeItem('flux_last_user_id');
   sessionStorage.clear();
-  const sb=getSB();
-  if(sb) await sb.auth.signOut();
-  // Force full page reload to login — 100% guaranteed, no state confusion
-  window.location.reload();
+  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
+  // Hard reload — no possible way to end up in wrong state
+  window.location.href=window.location.pathname;
 }
 
 // ── GUEST LOGIN ──
@@ -2538,6 +2567,26 @@ function showLoginOrApp(){
 }
 
 async function handleSignedIn(user,session){
+  // ── ACCOUNT SWITCH: wipe previous user's data ──────────────
+  const lastId = localStorage.getItem('flux_last_user_id');
+  if(lastId && lastId !== user.id){
+    // Different account — clear EVERYTHING personal from localStorage
+    // Device prefs (splash flag) survive; everything else goes
+    const survivingKeys = ['flux_splash_shown','flux_theme'];
+    const survived = {};
+    survivingKeys.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)survived[k]=v;});
+    localStorage.clear();
+    Object.entries(survived).forEach(([k,v])=>localStorage.setItem(k,v));
+    // Reset all in-memory state
+    tasks=[];grades={};notes=[];habits=[];goals=[];colleges=[];
+    moodHistory=[];schoolInfo={};classes=[];teacherNotes=[];
+    sessionLog=[];studyDNA=[];confidences={};weightedRows=[];
+    aiChats=[];aiHistory=[];
+    console.log('🔄 Account switched — wiped previous user data');
+  }
+  localStorage.setItem('flux_last_user_id', user.id);
+  // ────────────────────────────────────────────────────────────
+
   currentUser=user;
   save('flux_was_guest',false);
   if(session?.provider_token){
@@ -2547,7 +2596,7 @@ async function handleSignedIn(user,session){
   document.getElementById('loginScreen').classList.remove('visible');
   const name=user.user_metadata?.full_name||user.email?.split('@')[0]||'Student';
   const firstName=name.split(' ')[0];
-  if(!load('profile',{}).name)localStorage.setItem('flux_user_name',firstName);
+  localStorage.setItem('flux_user_name',firstName);
   _updateUserUI(user,name);
   setSyncStatus('syncing');
 
@@ -2577,7 +2626,8 @@ async function handleSignedIn(user,session){
     initModFeatures();
     initDashboardFeatures();
   }
-  setInterval(syncToCloud,5*60*1000);
+  // Sync every 2 minutes while logged in
+  if(!window._syncInterval)window._syncInterval=setInterval(syncToCloud,2*60*1000);
 }
 
 function _updateUserUI(user,name){
