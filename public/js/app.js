@@ -253,12 +253,14 @@ function getStudyDNAPrompt(){
 // No hardcoded subjects. Colors auto-assigned.
 const SUBJECT_COLORS=['#6366f1','#f43f5e','#10d9a0','#fbbf24','#3b82f6','#c084fc','#fb923c','#e879f9','#22d3ee','#4ade80','#f472b6','#a78bfa'];
 function getSubjects(){
-  // Build from user's saved classes
   const subjs={};
+  // Always include built-in subjects as base
+  Object.entries(SUBJECTS).forEach(([k,s])=>{subjs[k]={...s};});
+  // Merge in user classes (override/add)
   classes.forEach((c,i)=>{
     if(!c.name)return;
     const cleanName=c.name.replace(/^(IB\s+MYP|IB\s+DP|MYP|IB|DP|AP|Honors|Honours)\s+/i,'').trim()||c.name;
-    const key=cleanName.slice(0,6).toUpperCase().replace(/\s/g,'');
+    const key=(c.id?'CLS'+c.id:cleanName).toString().slice(0,8).toUpperCase().replace(/\s/g,'');
     subjs[key]={name:cleanName,short:cleanName.length>8?cleanName.slice(0,3).toUpperCase():cleanName,color:c.color||SUBJECT_COLORS[i%SUBJECT_COLORS.length]};
   });
   return subjs;
@@ -706,7 +708,43 @@ function spawnConfetti(){const colors=['#6366f1','#10d9a0','#fbbf24','#c084fc','
 // ══ CALENDAR ══
 function changeMonth(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
 function selectDay(d){calSelected=d;renderCalendar();document.getElementById('calAddBtn').style.display='inline-flex';}
-function openAddForDate(){document.getElementById('taskDate').value=new Date(calYear,calMonth,calSelected).toISOString().slice(0,10);nav('dashboard');document.getElementById('taskName').focus();}
+function openAddForDate(){
+  const dateStr=new Date(calYear,calMonth,calSelected).toISOString().slice(0,10);
+  // Show inline add-task modal in calendar instead of navigating away
+  showCalAddModal(dateStr);
+}
+function showCalAddModal(dateStr){
+  const existing=document.getElementById('calAddModal');if(existing)existing.remove();
+  const m=document.createElement('div');
+  m.id='calAddModal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
+  m.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:24px;animation:slideUp .2s ease">
+    <div style="font-size:1rem;font-weight:700;margin-bottom:14px">+ Task for ${new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</div>
+    <input type="text" id="calModalName" placeholder="Task name..." style="width:100%;margin-bottom:10px" autofocus>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <select id="calModalSubject" style="margin:0"><option value="">No subject</option>${Object.entries(SUBJECTS).map(([k,s])=>`<option value="${k}">${s.name}</option>`).join('')}</select>
+      <select id="calModalPriority" style="margin:0"><option value="high">High Priority</option><option value="med" selected>Medium</option><option value="low">Low</option></select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('calAddModal').remove()" class="btn-sec" style="flex:1">Cancel</button>
+      <button onclick="submitCalTask('${dateStr}')" style="flex:1">+ Add Task</button>
+    </div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  setTimeout(()=>document.getElementById('calModalName')?.focus(),100);
+}
+function submitCalTask(dateStr){
+  const name=document.getElementById('calModalName')?.value.trim();
+  if(!name)return;
+  const task={id:Date.now(),name,date:dateStr,subject:document.getElementById('calModalSubject')?.value||'',priority:document.getElementById('calModalPriority')?.value||'med',type:'hw',estTime:0,difficulty:3,notes:'',subtasks:[],done:false,rescheduled:0,createdAt:Date.now()};
+  task.urgencyScore=calcUrgency(task);
+  tasks.unshift(task);save('tasks',tasks);
+  document.getElementById('calAddModal')?.remove();
+  renderCalendar();renderStats();renderCountdown();
+  syncKey('tasks',tasks);
+  showToast('✓ Task added');
+}
 function renderCalendar(){
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('calMonthLabel').textContent=months[calMonth]+' '+calYear;
@@ -717,7 +755,10 @@ function renderCalendar(){
   const evMap={};(load('flux_events',[])).filter(e=>e.date).forEach(e=>{const d=new Date(e.date+'T00:00:00');if(d.getFullYear()===calYear&&d.getMonth()===calMonth){const k=d.getDate();if(!evMap[k])evMap[k]=[];evMap[k].push(e);}});
   let html=['S','M','T','W','T','F','S'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=first-1;i>=0;i--)html+=`<div class="cal-day other"><div class="cal-dn">${prevDays-i}</div></div>`;
-  for(let d=1;d<=days;d++){const dt=new Date(calYear,calMonth,d),ds=dt.toISOString().slice(0,10);const isToday=dt.getTime()===now.getTime(),isNP=isBreak(ds),ab=AB_MAP[ds];const tlist=tMap[d]||[];const elist=evMap[d]||[];const dots=[...tlist.slice(0,3).map(t=>{const s=SUBJECTS[t.subject];return`<div class="cal-dot" style="background:${s?s.color:'var(--accent)'};opacity:${t.done?.4:1}"></div>`;}), ...elist.slice(0,1).map(()=>`<div class="cal-dot" style="background:var(--purple)"></div>`)].join('');const abLabel=ab?`<div style="font-size:.45rem;font-family:'JetBrains Mono',monospace;color:${ab==='A'?'var(--accent)':'var(--green)'};line-height:1;margin-top:1px">${ab}</div>`:'';const overFlag=tlist.some(t=>!t.done&&new Date(t.date+'T00:00:00')<now)?'<div style="position:absolute;top:1px;right:1px;width:5px;height:5px;border-radius:50%;background:var(--red)"></div>':'';html+=`<div class="cal-day ${isToday?'today ':''}${d===calSelected?'selected ':''}${isNP?'no-hw':''}" onclick="selectDay(${d})" style="position:relative">${overFlag}<div class="cal-dn">${d}</div>${abLabel}<div class="cal-dots">${dots}</div></div>`;}
+  for(let d=1;d<=days;d++){const dt=new Date(calYear,calMonth,d),ds=dt.toISOString().slice(0,10);const isToday=dt.getTime()===now.getTime(),isNP=isBreak(ds),ab=AB_MAP[ds];const tlist=tMap[d]||[];const elist=evMap[d]||[];// Task bars with names
+const taskBars=tlist.slice(0,3).map(t=>{const s=SUBJECTS[t.subject];const c=s?s.color:'var(--accent)';return`<div class="cal-task-bar" style="background:${c}22;border-left:2px solid ${c};opacity:${t.done?.5:1};text-decoration:${t.done?'line-through':'none'}">${esc(t.name)}</div>`;}).join('');
+const eventBars=elist.slice(0,1).map(e=>`<div class="cal-task-bar" style="background:rgba(192,132,252,.15);border-left:2px solid var(--purple)">${esc(e.title||'Event')}</div>`).join('');
+const dots=taskBars+eventBars;const abLabel=ab?`<div style="font-size:.45rem;font-family:'JetBrains Mono',monospace;color:${ab==='A'?'var(--accent)':'var(--green)'};line-height:1;margin-top:1px">${ab}</div>`:'';const overFlag=tlist.some(t=>!t.done&&new Date(t.date+'T00:00:00')<now)?'<div style="position:absolute;top:1px;right:1px;width:5px;height:5px;border-radius:50%;background:var(--red)"></div>':'';html+=`<div class="cal-day ${isToday?'today ':''}${d===calSelected?'selected ':''}${isNP?'no-hw':''}" onclick="selectDay(${d})" style="position:relative">${overFlag}<div class="cal-dn">${d}</div>${abLabel}<div class="cal-dots">${dots}</div></div>`;}
   document.getElementById('calGrid').innerHTML=html;
   renderCalDay();
   renderCalToday();
@@ -1323,6 +1364,10 @@ function themeCrimson(){applyTheme('ember');}
 function themeFocus(){applyTheme('forest');}
 function themeSepia(){applyTheme('rose');}
 
+function applyThemeByName(name){
+  document.body.classList.remove('crimson','focus','sepia','cloud','aurora','ember','forest','rose','deep-ocean','candy');
+  if(name&&name!=='dark'&&name!=='midnight')document.body.classList.add(name);
+}
 function loadTheme(){
   const key=localStorage.getItem('flux_theme')||'dark';
   applyTheme(key);
@@ -1934,9 +1979,11 @@ function setSyncStatus(status){
   if(signedOutMsg){signedOutMsg.style.display=wasGuest&&!currentUser?'none':'block';}
 }
 function getCloudPayload(){
-  // Strip device-only prefs from settings before syncing
-  const {theme:_t, accent:_a, accentRgb:_ar, ...syncableSettings} = settings;
+  // Include colors in sync now — user wants same colors everywhere
   return{
+    accent:localStorage.getItem('flux_accent')||'',
+    accentRgb:localStorage.getItem('flux_accent_rgb')||'',
+    theme:localStorage.getItem('flux_theme')||'',
     tasks,
     grades,
     weightedRows,
@@ -1955,7 +2002,7 @@ function getCloudPayload(){
     onboarded:true,
     noHWDays:load('flux_no_hw_days',[]),
     events:load('flux_events',[]),
-    settings:syncableSettings,
+    settings:settings,
     ...(isOwner()?{devAccounts:load('flux_dev_accounts',[]),ownerEmail:OWNER_EMAIL}:{}),
   };
 }
@@ -2022,11 +2069,13 @@ async function syncFromCloud(){
     if(d.noHWDays){save('flux_no_hw_days',d.noHWDays);}
     if(d.events){save('flux_events',d.events);}
     if(d.settings){
-      // Never overwrite device-local theme/accent from cloud
-      const {theme:_t, accent:_a, accentRgb:_ar, flux_accent:_fa, flux_theme:_ft, ...cloudSettings} = d.settings;
-      settings={...settings,...cloudSettings};
+      settings={...settings,...d.settings};
       save('flux_settings',settings);
     }
+    // Restore synced colors
+    if(d.accent){localStorage.setItem('flux_accent',d.accent);document.documentElement.style.setProperty('--accent',d.accent);}
+    if(d.accentRgb){localStorage.setItem('flux_accent_rgb',d.accentRgb);document.documentElement.style.setProperty('--accent-rgb',d.accentRgb);}
+    if(d.theme){localStorage.setItem('flux_theme',d.theme);applyThemeByName(d.theme);}
     if(d.onboarded)save('flux_onboarded',true);
     // Load devAccounts — owner's list syncs to all dev accounts too
     if(d.devAccounts)save('flux_dev_accounts',d.devAccounts);
@@ -2447,39 +2496,32 @@ async function signInWithGoogleKeepData(){
 
 async function signInWithGoogle(){
   const sb=getSB();
-  if(!sb){
-    alert('Supabase not loaded yet — please refresh the page.');
-    return;
-  }
+  if(!sb){alert('Supabase not loaded yet — please refresh the page.');return;}
   try{
     const redirectTo=getRedirectURL();
+    // skipBrowserRedirect:false ensures same tab redirect (not new tab)
     const{error}=await sb.auth.signInWithOAuth({
       provider:'google',
       options:{
         redirectTo,
+        skipBrowserRedirect:false,
         scopes:'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly',
-        queryParams:{access_type:'offline',prompt:'consent'}
+        queryParams:{access_type:'offline',prompt:'select_account'}
       }
     });
     if(error)throw error;
   }catch(e){
     console.error('OAuth error:',e);
-    alert('Sign in failed: '+e.message+'\n\nMake sure '+getRedirectURL()+' is added to Supabase > Authentication > URL Configuration > Redirect URLs');
+    alert('Sign in failed: '+e.message);
   }
 }
 
 async function signOut(){
   if(!confirm('Sign out?'))return;
+  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
   const sb=getSB();
   if(sb) await sb.auth.signOut();
-  // Wipe all personal flags
-  localStorage.removeItem('flux_was_guest');
-  localStorage.removeItem('flux_onboarded');
-  localStorage.removeItem('flux_last_user_id');
-  sessionStorage.clear();
-  if(window._syncInterval){clearInterval(window._syncInterval);window._syncInterval=null;}
-  // Hard reload — no possible way to end up in wrong state
-  window.location.href=window.location.pathname;
+  handleSignedOut();
 }
 
 // ── GUEST LOGIN ──
@@ -2646,12 +2688,15 @@ function _updateUserUI(user,name){
 
 function handleSignedOut(){
   currentUser=null;gmailToken=null;
+  // Clear ALL local state so login screen always shows
   sessionStorage.clear();
-  localStorage.removeItem('flux_was_guest');
-  localStorage.removeItem('flux_onboarded');
-  localStorage.removeItem('flux_last_user_id');
-  // Force reload — cleanest way to guarantee login screen shows
-  window.location.reload();
+  const keysToKeep=['flux_splash_shown','flux_theme','flux_accent','flux_accent_rgb'];
+  const kept={};
+  keysToKeep.forEach(k=>{const v=localStorage.getItem(k);if(v!==null)kept[k]=v;});
+  localStorage.clear();
+  Object.entries(kept).forEach(([k,v])=>localStorage.setItem(k,v));
+  // Hard redirect to root — cleanest possible reset
+  window.location.replace(window.location.origin+window.location.pathname);
 }
 
 // ══ FEATURE PILLS — injected into login screen ══
