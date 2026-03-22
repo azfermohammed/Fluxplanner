@@ -1367,11 +1367,8 @@ function applyTheme(key){
   localStorage.setItem('flux_theme',key);
   const custom=load('flux_custom_colors',{});
   Object.entries(custom).forEach(([k,v])=>root.style.setProperty(k,v));
-  // Always re-apply saved accent last — overrides everything
+  // Always re-apply saved accent last via updateLogoColor (injects persistent style tag)
   const savedAccent=localStorage.getItem('flux_accent')||'#00bfff';
-  const savedRgb=localStorage.getItem('flux_accent_rgb')||'0,191,255';
-  root.style.setProperty('--accent',savedAccent);
-  root.style.setProperty('--accent-rgb',savedRgb);
   updateLogoColor(savedAccent);
 }
 function themeDark(){applyTheme('dark');}
@@ -1402,29 +1399,29 @@ function resetCustomColors(){
 }
 function updateLogoColor(hex){
   if(!hex)return;
-  // Update SVG logo circle/line colors
-  document.querySelectorAll('.sidebar-logo svg circle, .sidebar-logo svg line, .sidebar-logo svg path').forEach(el=>{
-    if(el.getAttribute('stroke')&&el.getAttribute('stroke')!=='none')el.setAttribute('stroke',hex);
-    if(el.getAttribute('fill')&&el.getAttribute('fill')!=='none'&&el.getAttribute('fill')!=='white'&&!el.getAttribute('fill').startsWith('url'))el.setAttribute('fill',hex);
-  });
-  // Update SVG gradient stops
-  document.querySelectorAll('#fluxWG stop, #fluxCG stop').forEach((stop,i)=>{
-    if(i===0)stop.setAttribute('stop-color','#ffffff');
-    else stop.setAttribute('stop-color',hex);
-  });
-  // Update text logo gradients
-  const logoGrad=`linear-gradient(135deg,#fff 0%,${hex} 60%,${hex}aa 100%)`;
-  document.querySelectorAll('.sidebar-logo,.mob-drawer-logo,.login-logo,.topbar-left').forEach(el=>{
-    if(el&&!el.querySelector('svg')){
-      el.style.background=logoGrad;el.style.webkitBackgroundClip='text';
-      el.style.webkitTextFillColor='transparent';el.style.backgroundClip='text';
-    }
-  });
+  // Inject a persistent <style> tag — survives ANY DOM re-render
+  let styleTag=document.getElementById('fluxAccentStyle');
+  if(!styleTag){
+    styleTag=document.createElement('style');
+    styleTag.id='fluxAccentStyle';
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent=`
+    :root{--accent:${hex}!important;--accent-rgb:${hexToRgb(hex)}!important}
+    .sidebar-logo svg circle[stroke],.sidebar-logo svg line,.sidebar-logo svg path[stroke]{stroke:${hex}!important}
+    #fluxWG stop:nth-child(2),#fluxCG stop:nth-child(2){stop-color:${hex}!important}
+    #fluxWG stop:nth-child(3){stop-color:${hex}aa!important}
+  `;
+  // Also set inline on root for immediate effect
+  document.documentElement.style.setProperty('--accent',hex);
+  document.documentElement.style.setProperty('--accent-rgb',hexToRgb(hex));
+}
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return isNaN(r)?'0,191,255':`${r},${g},${b}`;
 }
 function setAccent(hex,rgb,el){
-  document.documentElement.style.setProperty('--accent',hex);
-  document.documentElement.style.setProperty('--accent-rgb',rgb);
-  // Also use applyCustomVar for persistence
+  // Use updateLogoColor which injects persistent <style> tag
   applyCustomVar('--accent',hex);
   applyCustomVar('--accent-rgb',rgb);
   document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
@@ -2092,11 +2089,7 @@ async function forceSyncNow(){
   renderHabitList();renderGoalsList();renderCollegeList();renderMoodHistory();
   renderSchool();updateTStats();populateSubjectSelects();
   // Re-apply accent AFTER all renders (renderSidebars rebuilds SVG logo)
-  const _a=localStorage.getItem('flux_accent')||'#00bfff';
-  const _r=localStorage.getItem('flux_accent_rgb')||'0,191,255';
-  document.documentElement.style.setProperty('--accent',_a);
-  document.documentElement.style.setProperty('--accent-rgb',_r);
-  updateLogoColor(_a);
+  updateLogoColor(localStorage.getItem('flux_accent')||'#00bfff');
   if(btn){btn.textContent='✓ Synced';setTimeout(()=>{btn.textContent='Force Sync Now';btn.disabled=false;},2000);}
   showToast('✓ Data synced');
 }
@@ -2137,9 +2130,6 @@ async function syncFromCloud(){
     if(d.theme)localStorage.setItem('flux_theme',d.theme);
     // Now apply theme (it will read the accent we just wrote above)
     applyTheme(localStorage.getItem('flux_theme')||'dark');
-    // Force apply accent one more time to be 100% sure
-    document.documentElement.style.setProperty('--accent',syncAccent);
-    document.documentElement.style.setProperty('--accent-rgb',syncRgb);
     updateLogoColor(syncAccent);
     // Mark active swatch
     document.querySelectorAll('.swatch').forEach(s=>{
@@ -2163,11 +2153,7 @@ async function syncFromCloud(){
     renderStats();renderTasks();renderCalendar();renderCountdown();renderSmartSug();renderProfile();renderGradeInputs();renderGradeOverview();renderNotesList();renderHabitList();renderGoalsList();renderCollegeList();renderMoodHistory();renderSchool();updateTStats();
     populateSubjectSelects();
     // Re-apply accent after renders in case sidebar was rebuilt
-    const _sa=localStorage.getItem('flux_accent')||'#00bfff';
-    const _sr=localStorage.getItem('flux_accent_rgb')||'0,191,255';
-    document.documentElement.style.setProperty('--accent',_sa);
-    document.documentElement.style.setProperty('--accent-rgb',_sr);
-    updateLogoColor(_sa);
+    updateLogoColor(localStorage.getItem('flux_accent')||'#00bfff');
   }catch(e){console.error('Sync from cloud error',e);setSyncStatus('offline');}
 }
 const syncDebounceTimers={};
