@@ -1360,15 +1360,26 @@ const THEMES={
 function applyTheme(key){
   const theme=THEMES[key];if(!theme)return;
   const root=document.documentElement;
-  // Remove theme vars but NOT accent (we manage accent separately)
-  Object.keys(THEMES.dark.vars).filter(k=>k!=='--accent'&&k!=='--accent-rgb').forEach(k=>root.style.removeProperty(k));
-  Object.entries(theme.vars).forEach(([k,v])=>root.style.setProperty(k,v));
+  // Remove theme vars but NEVER touch --accent or --accent-rgb
+  Object.keys(THEMES.dark.vars)
+    .filter(k=>k!=='--accent'&&k!=='--accent-rgb')
+    .forEach(k=>root.style.removeProperty(k));
+  // Apply theme vars but skip accent
+  Object.entries(theme.vars)
+    .filter(([k])=>k!=='--accent'&&k!=='--accent-rgb')
+    .forEach(([k,v])=>root.style.setProperty(k,v));
   document.body.setAttribute('data-theme',key);
   localStorage.setItem('flux_theme',key);
+  // Apply custom color overrides (accent excluded from this object now)
   const custom=load('flux_custom_colors',{});
-  Object.entries(custom).forEach(([k,v])=>root.style.setProperty(k,v));
-  // Always re-apply saved accent last via updateLogoColor (injects persistent style tag)
+  Object.entries(custom)
+    .filter(([k])=>k!=='--accent'&&k!=='--accent-rgb')
+    .forEach(([k,v])=>root.style.setProperty(k,v));
+  // Always apply saved accent on top of everything
   const savedAccent=localStorage.getItem('flux_accent')||'#00bfff';
+  const savedRgb=localStorage.getItem('flux_accent_rgb')||'0,191,255';
+  root.style.setProperty('--accent',savedAccent);
+  root.style.setProperty('--accent-rgb',savedRgb);
   updateLogoColor(savedAccent);
 }
 function themeDark(){applyTheme('dark');}
@@ -1381,19 +1392,26 @@ function applyThemeByName(name){
   if(name&&name!=='dark'&&name!=='midnight')document.body.classList.add(name);
 }
 function loadTheme(){
+  // Clean any stale accent from flux_custom_colors (old bug residue)
+  const custom=load('flux_custom_colors',{});
+  if(custom['--accent']||custom['--accent-rgb']){
+    delete custom['--accent'];delete custom['--accent-rgb'];
+    save('flux_custom_colors',custom);
+  }
   const key=localStorage.getItem('flux_theme')||'dark';
-  // Apply accent BEFORE applyTheme so it's never overwritten
   const acc=localStorage.getItem('flux_accent')||'#00bfff';
   const rgb=localStorage.getItem('flux_accent_rgb')||'0,191,255';
+  // Set accent on root BEFORE applyTheme
   document.documentElement.style.setProperty('--accent',acc);
   document.documentElement.style.setProperty('--accent-rgb',rgb);
-  applyTheme(key);
-  // updateLogoColor after a tick to ensure DOM is ready
+  applyTheme(key); // applyTheme now never overwrites accent
   setTimeout(()=>updateLogoColor(acc),0);
 }
 
 function applyCustomVar(varName,value){
   document.documentElement.style.setProperty(varName,value);
+  // Never store accent in flux_custom_colors — managed separately via flux_accent
+  if(varName==='--accent'||varName==='--accent-rgb')return;
   const custom=load('flux_custom_colors',{});
   custom[varName]=value;
   save('flux_custom_colors',custom);
