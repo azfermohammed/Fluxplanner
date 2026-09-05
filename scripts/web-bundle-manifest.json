@@ -222,6 +222,7 @@
     "public/js/flux-school-schedules.js",
     "public/js/flux-sub-plans.js",
     "public/js/flux-grade-gps.js",
+    "public/js/flux-academic-scores.js",
     "public/js/flux-accommodation-cards.js",
     "public/js/flux-web-push.js",
     "public/js/flux-study-rooms-v2.js",
@@ -386,6 +387,7 @@
     "public/css/flux-native-controls.css",
     "public/css/flux-changelog.css",
     "public/css/flux-platform-ui.css",
+    "public/css/flux-academic-scores.css",
     "public/css/flux-datepicker.css"
   ]
 }

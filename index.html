@@ -106,7 +106,7 @@
 <link rel="preload" href="public/fonts/jetbrains-mono-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <!-- Flux CSS — 139 per-page stylesheets bundled into one minified file in exact cascade order (see scripts/web-bundle-manifest.json "css"; rebuild: npm run build:web). Google Fonts stays a separate <link> above. -->
 <!-- NB: Flux Pulse layout intentionally NOT loaded (pulse-layout.css + pulse-perf.css removed — caused lag). -->
-<link rel="stylesheet" href="public/bundles/flux.10d5b195.css">
+<link rel="stylesheet" href="public/bundles/flux.be581b76.css">
 </head>
 <body>
 <noscript>
@@ -1875,6 +1875,10 @@
       </div>
       <div class="card" data-student-profile-only><h3>Course Confidence</h3><div id="confidenceSliders"></div><button onclick="saveConfidences()" style="width:100%;margin-top:8px">Save</button></div>
       <div class="card" data-student-profile-only><h3>Academic Stats</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="profileStats"></div></div>
+      <!-- GPA, SAT and ACT. Filled by flux-academic-scores.js from
+           renderProfile(); left empty here so a student who has never opened
+           the tab gets no flash of markup the module is about to replace. -->
+      <div id="academicScoresMount" data-student-profile-only></div>
       <div id="myCounselorSection" class="my-counselor-section" data-student-profile-only></div>
       </div>
     </div>
@@ -2901,8 +2905,8 @@
 <!-- Load scripts: motion catalog (Anime.js v4 + 21st-style CSS pairs), then main animations -->
 <!-- Bundled: 197 per-file scripts collapsed into 3 (see scripts/build-web-bundles.mjs + web-bundle-manifest.json; run npm run build:web to rebuild) -->
 <script type="module" src="public/bundles/flux-vendor.5e92eaa1.js"></script>
-<script defer src="public/bundles/flux-core.c5c9764b.js"></script>
-<script defer src="public/bundles/flux-features.d182c61a.js"></script>
+<script defer src="public/bundles/flux-core.c69829c6.js"></script>
+<script defer src="public/bundles/flux-features.f79542d0.js"></script>
 <!-- flux-pulse-layout.js + flux-pulse-perf.js REMOVED (Pulse layout retired) -->
 
 <!-- Feedback modal (vanilla; Radix/shadcn-style dialog pattern) -->

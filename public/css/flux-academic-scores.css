@@ -1,0 +1,127 @@
+/* Flux · GPA and test scores card — paired with public/js/flux-academic-scores.js.
+   Tokens only (--card2, --border, --accent, --muted), so it follows the theme
+   and any custom accent rather than carrying its own palette. */
+
+.fas-card h3 { margin-bottom: 4px; }
+
+.fas-sec { padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border, rgba(255, 255, 255, .08)); }
+.fas-sec:first-of-type { padding-top: 6px; margin-top: 6px; border-top: 0; }
+
+.fas-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.fas-sec-t {
+  font-size: .95rem; font-weight: 800; letter-spacing: -.01em;
+  color: var(--text, #fff);
+}
+.fas-sec-n { font-size: .72rem; color: var(--muted, #6b7280); font-family: 'JetBrains Mono', monospace; }
+
+/* ── the three headline numbers ── */
+.fas-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.fas-stat {
+  background: var(--card2, rgba(255, 255, 255, .04));
+  border: 1px solid var(--border, rgba(255, 255, 255, .07));
+  border-radius: 12px; padding: 10px 12px; min-width: 0;
+}
+.fas-stat-v {
+  font-size: 1.35rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em;
+  color: var(--text, #fff); font-family: 'JetBrains Mono', monospace;
+}
+.fas-stat-l { font-size: .72rem; font-weight: 700; color: var(--muted2, #9aa3b2); margin-top: 3px; }
+.fas-stat-h { font-size: .64rem; color: var(--muted, #6b7280); margin-top: 1px; line-height: 1.35; }
+
+/* ── progress towards a target ── */
+.fas-bar {
+  position: relative; height: 7px; border-radius: 99px; overflow: hidden;
+  background: var(--border2, rgba(255, 255, 255, .1));
+}
+.fas-bar-fill {
+  position: absolute; inset: 0 auto 0 0; border-radius: 99px;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), .55), var(--accent));
+  transition: width .5s cubic-bezier(.22, 1, .36, 1);
+}
+.fas-bar-fill.is-hit { background: linear-gradient(90deg, rgba(var(--accent-rgb), .5), var(--green, #34d399)); }
+/* The target marker sits *above* the fill, so passing it reads as passing it. */
+.fas-bar-goal {
+  position: absolute; top: -2px; bottom: -2px; width: 2px; border-radius: 2px;
+  background: var(--text, #fff); opacity: .55; transform: translateX(-1px);
+}
+.fas-bar-cap { font-size: .7rem; color: var(--muted2, #9aa3b2); margin: 6px 0 12px; }
+
+/* ── one row per sitting ── */
+.fas-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.fas-row {
+  position: relative;
+  background: var(--card2, rgba(255, 255, 255, .04));
+  border: 1px solid var(--border, rgba(255, 255, 255, .07));
+  border-radius: 12px; padding: 9px 40px 9px 12px;
+}
+.fas-row-main { display: flex; align-items: baseline; gap: 10px; }
+.fas-row-score {
+  font-size: 1.05rem; font-weight: 800; color: var(--text, #fff);
+  font-family: 'JetBrains Mono', monospace;
+}
+.fas-row-date { font-size: .72rem; color: var(--muted2, #9aa3b2); }
+.fas-row-sub { font-size: .7rem; color: var(--muted, #6b7280); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.fas-del {
+  position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+  width: 26px; height: 26px; padding: 0; display: inline-flex;
+  align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; font-size: .8rem; line-height: 1;
+  background: transparent; border: 1px solid transparent; color: var(--muted, #6b7280);
+  transition: color .12s, background .12s, border-color .12s;
+}
+.fas-del:hover {
+  color: var(--red, #f87171); border-color: rgba(248, 113, 113, .35);
+  background: rgba(248, 113, 113, .08);
+  /* The global button:hover lifts by 1px, which would fight the centring
+     transform this button already needs. Restate it, and drop the shadow. */
+  transform: translateY(-50%); box-shadow: none;
+}
+
+.fas-empty { font-size: .78rem; color: var(--muted, #6b7280); margin: 0 0 12px; line-height: 1.5; }
+
+/* ── entry fields ──
+   These have to out-rank flux-form-controls.css, which sets every input inside
+   #app to width:100% at (1,1,1) — under that rule the fields stack one per line
+   and a four-column row becomes four rows. The selectors below are (1,2,1). */
+.fas-grid { display: grid; gap: 8px; margin-bottom: 10px; }
+.fas-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fas-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.fas-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fas-field > span { font-size: .68rem; font-weight: 700; color: var(--muted, #6b7280); }
+#app .fas-card .fas-field input,
+#app .fas-card .fas-field select {
+  width: 100%; margin: 0 !important; min-width: 0;
+  font-size: .82rem; padding: 8px 10px !important;
+}
+/* …but not the date field's icon gutter, which flux-datepicker.css owns. */
+#app .fas-card .fas-field input[type="date"] { padding-right: 34px !important; }
+
+.fas-btn {
+  width: 100%; padding: 9px 14px; border-radius: 10px; cursor: pointer;
+  font-size: .8rem; font-weight: 700;
+  background: transparent; color: var(--text, #fff);
+  border: 1px solid var(--border2, rgba(255, 255, 255, .1));
+  transition: border-color .14s, background .14s;
+}
+.fas-btn:hover {
+  border-color: rgba(var(--accent-rgb), .45); background: rgba(var(--accent-rgb), .08);
+  transform: none; box-shadow: none;
+}
+.fas-btn--primary { border-color: rgba(var(--accent-rgb), .4); color: var(--accent); }
+
+.fas-cross {
+  margin: 16px 0 0; padding: 11px 13px; border-radius: 12px;
+  background: rgba(var(--accent-rgb), .07);
+  border: 1px solid rgba(var(--accent-rgb), .18);
+  font-size: .78rem; line-height: 1.5; color: var(--text2, var(--text, #e6e9ef));
+}
+.fas-cross-src { display: block; margin-top: 3px; font-size: .68rem; color: var(--muted, #6b7280); }
+
+/* Phones: three and four across is unreadable, so drop to two. */
+@media (max-width: 620px) {
+  .fas-grid--3, .fas-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fas-stats { grid-template-columns: 1fr; }
+  .fas-stat { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .fas-stat-l, .fas-stat-h { margin-top: 0; }
+}

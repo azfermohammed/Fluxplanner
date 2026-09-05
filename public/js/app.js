@@ -6439,7 +6439,14 @@ function formatProgramsDisplay(programs){
 }
 
 function saveProfile(){
+  /* Spread the stored record first. This used to build a fresh object from the
+     four fields on screen, which silently deleted every other key the profile
+     carries — gpa, interests, financialNeed — none of which have an input in
+     this form. That is why flux-opportunities.js has always matched
+     scholarships against a blank GPA: the number was being written by the
+     scores card and wiped by the next Save Profile. */
   const p={
+    ...(load('profile',{})||{}),
     name:document.getElementById('name').value.trim(),
     grade:document.getElementById('grade').value,
     program:Array.from(document.querySelectorAll('input[name="programOpt"]:checked')).map(i=>i.value),
@@ -6552,6 +6559,10 @@ function renderProfile(){
   const ps=document.getElementById('profileStats');
   const focusHrs=Math.round((load('t_minutes',0)||0)/60);
   if(ps)ps.innerHTML=[[focusHrs+'h','Focus','var(--accent)'],[done,'Done','var(--green)'],[tasks.filter(t=>!t.done).length,'Active','var(--gold)'],[notes.length,'Notes','var(--purple)']].map(([n,l,c])=>`<div style="background:var(--card2);border-radius:10px;padding:12px"><div style="font-size:1.4rem;font-weight:800;color:${c}">${n}</div><div style="font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:2px">${l}</div></div>`).join('');
+
+  // Before the confidence sliders, which return early when there are no
+  // classes yet — a student with an empty timetable still has test scores.
+  try{if(window.FluxAcademicScores?.render)FluxAcademicScores.render();}catch(_){}
 
   // Confidence sliders — now use dynamic subjects from user's classes
   const confEl=document.getElementById('confidenceSliders');
@@ -9169,6 +9180,10 @@ function getCloudPayload(){
     // still showed the default order. Note the lowercase global — the module
     // exposes window.fluxStudyHub, not FluxStudyHub.
     studyHub:(window.fluxStudyHub?.getCloudSlice?fluxStudyHub.getCloudSlice():load('flux_study_hub',{subject:'chemistry',chemTab:'table',tool:{},favs:[]})),
+    // GPA and every SAT/ACT sitting. Section scores, not totals — a superscore
+    // cannot be rebuilt from a total, so storing "1420" would lose the thing
+    // colleges actually read.
+    academicScores:(window.FluxAcademicScores?.getCloudSlice?FluxAcademicScores.getCloudSlice():load('flux_academic_scores_v1',{gpa:{},targets:{},sat:[],act:[]})),
     // Alarms and world clocks only. A running stopwatch or countdown stays on
     // the device that started it — copying its end timestamp across would show
     // a second device a countdown nobody there set.
@@ -9586,6 +9601,11 @@ async function syncFromCloud(){
     }
     if(d.timeTools&&typeof d.timeTools==='object'){
       try{if(window.FluxTimeTools?.applyFromCloud)FluxTimeTools.applyFromCloud(d.timeTools);}catch(_){}
+    }
+    if(d.academicScores&&typeof d.academicScores==='object'){
+      // applyFromCloud refuses an empty incoming list, for the same reason
+      // cloudListWins does above — see the note there.
+      try{if(window.FluxAcademicScores?.applyFromCloud)FluxAcademicScores.applyFromCloud(d.academicScores);}catch(_){}
     }
     // Array, not object — an empty timetable is a legitimate value, so this
     // tests Array.isArray rather than truthiness the way the object slices do.
