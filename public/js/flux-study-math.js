@@ -318,7 +318,7 @@
     }
 
     H.register('math', [
-      { id: 'graph', name: 'Grapher', icon: '📈', desc: 'graphing calculator plot function desmos', render: renderGraph, ai: { name: 'graphEval', description: 'Evaluate f(x). Arg: "x^2+1 @ 3" (expr @ x).', params: { expr: 'string', x: 'number' }, run: (a) => { const m = String(a).split('@'); const fn = compile(m[0]); return +fn(parseFloat(m[1] || 0)).toFixed(6); } } },
+      { id: 'graph', name: 'Desmos', icon: '📈', desc: 'graphing calculator plot function desmos', render: renderGraph, ai: { name: 'graphEval', description: 'Evaluate f(x). Arg: "x^2+1 @ 3" (expr @ x).', params: { expr: 'string', x: 'number' }, run: (a) => { const m = String(a).split('@'); const fn = compile(m[0]); return +fn(parseFloat(m[1] || 0)).toFixed(6); } } },
       { id: 'unit', name: 'Unit circle', icon: '🧭', desc: 'unit circle sin cos tan trigonometry angle', render: renderUnitCircle },
       { id: 'matrix', name: 'Matrix', icon: '⊞', desc: 'matrix determinant inverse transpose', render: renderMatrix },
       { id: 'stats', name: 'Statistics', icon: '𝝈', desc: 'statistics mean median standard deviation quartiles', render: renderStats, ai: { name: 'statsSummary', description: 'Summary statistics. Arg: "12 15 14 10".', params: { numbers: 'list' }, run: (a) => stats(String(a).split(/[\s,]+/).map(Number).filter((x) => !isNaN(x))) } },

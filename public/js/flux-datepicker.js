@@ -104,6 +104,12 @@
 
   function place() {
     if (!open) return;
+    /* An anchor that has left the document reports a rect of all zeros, and
+       positioning against that puts the calendar in the top-left corner of the
+       screen — which is what a student saw after clicking a month arrow inside
+       a popup that removed itself. There is nothing honest to point at once
+       the field is gone, so close rather than float somewhere arbitrary. */
+    if (!open.input.isConnected) { closePicker(); return; }
     var r = open.input.getBoundingClientRect();
     var pop = open.pop;
     var h = pop.offsetHeight;
@@ -173,6 +179,17 @@
     if (!(t instanceof Element)) return;
 
     if (open && open.pop.contains(t)) {
+      /* This click belongs to the calendar; nothing else should also react to
+         it. Without this, a click on a month arrow went on to reach the
+         document-level "click outside" handlers that other popups install —
+         and one of those (openInlineDatePicker, for a task's due date) removed
+         the box containing the very field this calendar is anchored to.
+         Checking the target for .fdp-pop in those handlers is not enough:
+         paint() below replaces the popup's contents while we are still in the
+         capture phase, so the button they receive is already detached and
+         closest('.fdp-pop') finds nothing. Stopping it here is the only point
+         at which the truth is still knowable. */
+      e.stopPropagation();
       var nav = t.closest('[data-fdp-nav]');
       if (nav) {
         open.view = new Date(open.view.getFullYear(), open.view.getMonth() + Number(nav.getAttribute('data-fdp-nav')), 1);

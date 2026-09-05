@@ -734,7 +734,9 @@
     const divider = own.length && legacy.length
       ? '<span class="fsh-tab-divider" aria-hidden="true">Reference</span>'
       : '';
-    stage.innerHTML = `<div class="fsh-chem fsh-panel"><div class="fsh-tabs-wrap"><div class="fsh-chem-tabs" id="fshChemTabs"><div class="fsh-chem-tab-glide" id="fshTabGlide"></div>${own.map(tabBtn).join('')}${divider}${legacy.map(tabBtn).join('')}</div>${TAB_SLIDER}</div><div class="fsh-chem-body" id="fshSubBody"></div></div>` + refStrip(sid);
+    // data-sid so a click can ask the strip which subject it belongs to
+    // instead of trusting a global that something else may have moved.
+    stage.innerHTML = `<div class="fsh-chem fsh-panel"><div class="fsh-tabs-wrap"><div class="fsh-chem-tabs" id="fshChemTabs" data-sid="${esc(sid)}"><div class="fsh-chem-tab-glide" id="fshTabGlide"></div>${own.map(tabBtn).join('')}${divider}${legacy.map(tabBtn).join('')}</div>${TAB_SLIDER}</div><div class="fsh-chem-body" id="fshSubBody"></div></div>` + refStrip(sid);
     renderToolBody(sid, picked);
     requestAnimationFrame(moveTabGlide);
   }
@@ -1031,14 +1033,27 @@
       }
       const subTab = t.closest('.fsh-chem-tab[data-tool]');
       if (subTab) {
-        state.tool[state.subject] = subTab.dataset.tool; save();
+        /* Which subject this strip belongs to comes from the strip, not from
+           state.subject. The two can disagree — a cloud pull used to move
+           state.subject out from under a panel that stayed on screen — and
+           when they did, the click was filed against a subject with no such
+           tool, so nothing happened and every later click on that strip was
+           dead as well. The markup cannot be wrong about what it is showing,
+           so it is the authority, and the global is corrected to match. */
+        const strip = subTab.closest('.fsh-chem-tabs');
+        const sid = (strip && strip.dataset.sid) || state.subject;
+        state.subject = sid;
+        state.tool[sid] = subTab.dataset.tool; save();
         // Same shape as the chemistry branch above, and for the same reasons:
         // move the class, slide the highlight, then draw the panel a frame
         // later. Falls back to rebuilding the whole stage if there is no body
         // to draw into — which also rebuilds the strip, so no glide.
-        const sid = state.subject;
         document.querySelectorAll('#fshChemTabs .fsh-chem-tab').forEach((b) => b.classList.toggle('active', b === subTab));
-        if ($('fshSubBody')) { moveTabGlide(); requestAnimationFrame(() => renderToolBody(sid, true)); }
+        /* A false from renderToolBody means it found no body or no such tool.
+           Rebuilding is the only honest response: leaving the tab lit above a
+           panel still showing the previous tool is indistinguishable from a
+           button that does nothing. */
+        if ($('fshSubBody')) { moveTabGlide(); requestAnimationFrame(() => { if (!renderToolBody(sid, true)) renderRegistered(sid, true); }); }
         else renderRegistered(sid, true);
         return;
       }
@@ -1164,6 +1179,18 @@
   function getCloudSlice() {
     return { subject: state.subject, chemTab: state.chemTab, tool: state.tool, favs: state.favs };
   }
+  /* Is the student looking at Study Tools right now?
+     Two sources because neither is enough alone: the panel's .active class
+     lingers ~500ms into the leave transition (so it over-reports on the way
+     out), while __fluxLastNavPanel is set synchronously in nav() but is empty
+     before the first navigation. OR-ing them errs towards "yes, in use", which
+     is the safe direction — the cost of a false yes is one stale cursor, the
+     cost of a false no is the bug below. */
+  function hubInUse() {
+    if (!$('fshRoot')) return false;
+    const tb = $('toolbox');
+    return (!!tb && tb.classList.contains('active')) || window.__fluxLastNavPanel === 'toolbox';
+  }
   function applyFromCloud(data) {
     if (!data || typeof data !== 'object') return;
     /* Favourites are the point of syncing this, and they are the one field a
@@ -1171,9 +1198,32 @@
        would silently unstar everything on this device. Only take what is
        actually an array, and keep what is here otherwise. */
     if (Array.isArray(data.favs)) state.favs = data.favs.filter((id) => typeof id === 'string');
-    if (typeof data.subject === 'string') state.subject = data.subject;
-    if (typeof data.chemTab === 'string') state.chemTab = data.chemTab;
-    if (data.tool && typeof data.tool === 'object') state.tool = data.tool;
+    /* subject/chemTab/tool are a cursor — where you are looking this second —
+       not data, and the cloud pull runs every 8 seconds. Taking them while the
+       student is standing in the panel is what "I click Matrix and it just
+       doesn't work" actually was, in two flavours:
+
+         · The pull lands in the one-frame gap the click handler leaves between
+           setting state.tool and rendering (requestAnimationFrame). The tab
+           you clicked lights up, state.tool is reverted underneath it, and the
+           frame then draws whatever the cloud said. Measured: active tab
+           "Matrix", panel "Graphing calculator", state.tool.math "graph".
+         · Worse and longer-lived, the pull moves state.subject to whatever the
+           record holds. The Math strip is still on screen but every click on
+           it is now filed under Chemistry — state.tool.chemistry = 'matrix' —
+           and renderToolBody finds no such tool, so it returns false and the
+           panel never changes again. Every tab on that strip is dead until you
+           leave the subject.
+
+       So the cursor is only adopted while the hub is off screen, which is
+       still every path that needs it: signing in from the dashboard, a fresh
+       load, or another device's choice arriving before you open Study Tools.
+       Once you are in there it is yours. */
+    if (!hubInUse()) {
+      if (typeof data.subject === 'string') state.subject = data.subject;
+      if (typeof data.chemTab === 'string') state.chemTab = data.chemTab;
+      if (data.tool && typeof data.tool === 'object') state.tool = data.tool;
+    }
     /* Persist through window.save directly, NOT through save(): save() calls
        syncKey, which would queue a push of what we just pulled down and bounce
        the same record back to the server on every sign-in. */

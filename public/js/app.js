@@ -17329,7 +17329,14 @@ function openInlineDatePicker(taskId,el){
     <input type="date" value="${t.date||''}" style="margin:0;font-size:.82rem;width:100%" onchange="setTaskDateInline(${taskId},this.value,this.closest('#inlineDatePicker'))">`;
   document.body.appendChild(picker);
   setTimeout(()=>{
-    function closePicker(ev){if(!picker.contains(ev.target)&&ev.target!==el){picker.remove();document.removeEventListener('click',closePicker);}}
+    /* The themed calendar (.fdp-pop) is appended to <body>, not inside this
+       box, so a click on its month arrows counted as "outside" and tore this
+       box down — taking with it the very <input> the calendar is anchored to.
+       The next arrow click then measured a detached element, got a rect of all
+       zeros, and threw the calendar into the top-left corner of the screen.
+       Measured: after one arrow click the box was already gone; after two the
+       calendar had moved from (25, 436) to (8, 6). */
+    function closePicker(ev){const t=ev.target;if(picker.contains(t)||t===el||(t&&t.closest&&t.closest('.fdp-pop')))return;picker.remove();document.removeEventListener('click',closePicker);}
     document.addEventListener('click',closePicker);
   },10);
 }
