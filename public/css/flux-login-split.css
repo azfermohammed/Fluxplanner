@@ -1,91 +1,5 @@
 /* ═══ FluxLoginSplit — Akiflow-style login hero (layer over login-aurora) ═══ */
 
-/* "Your AI profile" card — left panel of the split hero */
-.lxs-profile{
-  margin:26px 0 6px;
-  max-width:360px;
-  background:linear-gradient(160deg,rgba(20,21,32,.92),rgba(26,22,46,.9));
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:20px;
-  padding:26px 24px 22px;
-  box-shadow:0 24px 60px -30px rgba(124,92,255,.45),0 2px 8px rgba(0,0,0,.35);
-  position:relative;
-  overflow:hidden;
-}
-.lxs-profile::after{
-  content:"";
-  position:absolute;inset:auto -40% -70% -40%;
-  height:200px;
-  background:radial-gradient(closest-side,rgba(124,92,255,.35),transparent);
-  pointer-events:none;
-}
-.lxs-profile-spark{
-  width:52px;height:52px;
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 14px;
-  border-radius:16px;
-  font-size:1.5rem;
-  color:#cfc4ff;
-  background:linear-gradient(140deg,rgba(0,194,255,.16),rgba(124,92,255,.22));
-  border:1px solid rgba(255,255,255,.1);
-}
-.lxs-profile-title{
-  text-align:center;
-  font-size:1.15rem;
-  font-weight:800;
-  letter-spacing:-.015em;
-  color:#eef0f7;
-  margin-bottom:16px;
-}
-.lxs-profile-meter{
-  display:flex;align-items:center;gap:12px;
-  margin-bottom:18px;
-}
-.lxs-profile-pct{
-  font-family:'JetBrains Mono',monospace;
-  font-size:.85rem;
-  color:#b9c1d9;
-  min-width:38px;
-}
-.lxs-profile-track{
-  flex:1;height:7px;border-radius:999px;
-  background:rgba(255,255,255,.08);
-  overflow:hidden;
-}
-.lxs-profile-fill{
-  height:100%;width:0;border-radius:999px;
-  background:linear-gradient(90deg,#00c2ff,#7c5cff);
-}
-.lxs-profile-row{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;
-  border-radius:12px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.06);
-  font-size:.85rem;
-  color:#c8cede;
-  margin-top:8px;
-  position:relative;z-index:1;
-}
-.lxs-profile-ico{
-  width:28px;height:28px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:9px;
-  background:rgba(124,92,255,.16);
-  font-size:.85rem;
-}
-.lxs-profile-val{margin-left:auto;display:flex;align-items:center}
-.lxs-profile-g svg{width:18px;height:18px}
-.lxs-profile-pill{
-  font-size:.68rem;
-  font-weight:600;
-  color:#b9c1d9;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.08);
-  padding:3px 9px;
-  border-radius:999px;
-}
-
 /* Auth card polish — bigger radius, calmer field chrome, Akiflow-purple CTA */
 .flux-login-split .lx-auth-card{
   border-radius:22px;
@@ -109,8 +23,4 @@
 .flux-login-split .lx-field input:focus{
   border-color:#7c5cff;
   box-shadow:0 0 0 3px rgba(124,92,255,.22);
-}
-
-@media (max-width:860px){
-  .lxs-profile{margin:20px auto 4px}
 }
