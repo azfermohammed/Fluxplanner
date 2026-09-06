@@ -4,22 +4,27 @@ import { gotoScenario, openSidebarTab } from './helpers';
 /**
  * Extracurriculars was five long cards in one column, mixing "what I do after
  * school" with "where I'm applying", and its two AI helpers sat four cards
- * apart with nothing saying they answered different questions. It is now two
- * sub-sections, Activities and Colleges.
+ * apart with nothing saying they answered different questions. It is now the
+ * College Prep tab, in three sub-sections: Activities, Colleges, Test scores.
+ *
+ * Test scores arrived last, moved off the Profile tab where it had been
+ * sitting four cards down under "Academic Stats" — the first thing said about
+ * it was "I couldn't find the SAT ACT stuff anywhere".
  *
  * The risk worth a test is the cards other modules inject. flux-opportunities
- * appends to #goals .flux-stack, which is now the wrapper holding *both*
- * panes — a card added there sits outside either one and shows under Colleges
- * as well as Activities, which looks like a bug and can't be switched away.
+ * appends to #goals .flux-stack, which is the wrapper holding *all* the
+ * panes — a card added there sits outside every one of them and shows under
+ * Colleges as well as Activities, which looks like a bug and can't be switched
+ * away.
  */
-test.describe('Extracurriculars sections', () => {
+test.describe('College Prep sections', () => {
   test.beforeEach(async ({ page }) => {
     await gotoScenario(page, 'student-semester');
     await openSidebarTab(page, 'goals');
     await expect(page.locator('#goals.panel.active')).toBeVisible();
   });
 
-  test('splits into Activities and Colleges, and switching swaps the pane', async ({ page }) => {
+  test('splits into Activities, Colleges and Test scores, and switching swaps the pane', async ({ page }) => {
     const before = await page.evaluate(() => ({
       tabs: [...document.querySelectorAll('#goals .stab')].map((b) => b.textContent!.trim()),
       panes: [...document.querySelectorAll('#goals .spane')].map((p) => ({
@@ -29,9 +34,9 @@ test.describe('Extracurriculars sections', () => {
       })),
     }));
 
-    expect(before.tabs).toEqual(['Activities', 'Colleges']);
-    expect(before.panes.map((p) => p.id)).toEqual(['ecpane-activities', 'ecpane-colleges']);
-    // Activities opens by default — it is the half you fill in first.
+    expect(before.tabs).toEqual(['Activities', 'Colleges', 'Test scores']);
+    expect(before.panes.map((p) => p.id)).toEqual(['ecpane-activities', 'ecpane-colleges', 'ecpane-scores']);
+    // Activities opens by default — it is the part you fill in first.
     expect(before.panes[0].on).toBe(true);
     expect(before.panes[0].cards).toContain('My Activities');
     expect(before.panes[0].cards).toContain('Goals & Milestones');
@@ -49,8 +54,8 @@ test.describe('Extracurriculars sections', () => {
         ),
       };
     });
-    expect(after.panes).toEqual(['ecpane-activities:false', 'ecpane-colleges:true']);
-    expect(after.tabs).toEqual(['Activities:false', 'Colleges:true']);
+    expect(after.panes).toEqual(['ecpane-activities:false', 'ecpane-colleges:true', 'ecpane-scores:false']);
+    expect(after.tabs).toEqual(['Activities:false', 'Colleges:true', 'Test scores:false']);
   });
 
   test('injected cards land inside a section, not floating outside both', async ({ page }) => {

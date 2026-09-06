@@ -1571,7 +1571,7 @@ function flushTasksOffRestDays(){
   }
   return n;
 }
-const PANEL_TITLES={dashboard:'Dashboard',calendar:'Calendar',school:'School Info',notes:'Notebook',notebook:'Notebook',timer:'Time',canvas:'Canvas',google:'Google',profile:'Profile',goals:'Extracurriculars',mood:'Mood',ai:'Flux AI',toolbox:'Study Tools',references:'Study Tools',settings:'Settings',flux_control:'Control',teacherDashboard:'Teacher Dashboard',counselorDashboard:'Counselor Dashboard',counselorWorkspace:'Caseload tools',adminDashboard:'School',lessonHub:'Lesson Hub',teacherResources:'Resources',counselorMeetings:'Meetings',adminOps:'Operations',staffWorkboard:'Workboard',staffHub:'Work hub',staffTasks:'Tasks',staffMeetingNotes:'Meeting notes',staffPD:'Development',staffWellbeing:'Wellbeing',staffResources:'Resources',staffPersonalHub:'Personal hub',schoolFeedPanel:'School feed',parentPortal:'Family'};
+const PANEL_TITLES={dashboard:'Dashboard',calendar:'Calendar',school:'School Info',notes:'Notebook',notebook:'Notebook',timer:'Time',canvas:'Canvas',google:'Google',profile:'Profile',goals:'College Prep',mood:'Mood',ai:'Flux AI',toolbox:'Study Tools',references:'Study Tools',settings:'Settings',flux_control:'Control',teacherDashboard:'Teacher Dashboard',counselorDashboard:'Counselor Dashboard',counselorWorkspace:'Caseload tools',adminDashboard:'School',lessonHub:'Lesson Hub',teacherResources:'Resources',counselorMeetings:'Meetings',adminOps:'Operations',staffWorkboard:'Workboard',staffHub:'Work hub',staffTasks:'Tasks',staffMeetingNotes:'Meeting notes',staffPD:'Development',staffWellbeing:'Wellbeing',staffResources:'Resources',staffPersonalHub:'Personal hub',schoolFeedPanel:'School feed',parentPortal:'Family'};
 
 // ══ Time / format helpers (used by educator dashboards + onboarding) ══
 function getTimeGreeting(){
@@ -3047,7 +3047,7 @@ const DEFAULT_TABS=[
   {id:'notes',icon:'📓',label:'Notebook',visible:true},
   {id:'timer',icon:'⏱',label:'Time',visible:true},
   {id:'profile',icon:'👤',label:'Profile',visible:true},
-  {id:'goals',icon:'🎯',label:'Extracurriculars',visible:true},
+  {id:'goals',icon:'🎯',label:'College Prep',visible:true},
   {id:'mood',icon:'😊',label:'Mood',visible:true},
   {id:'toolbox',icon:'🧰',label:'Study tools',visible:true},
   {id:'settings',icon:'⚙',label:'Settings',visible:true},
@@ -3556,7 +3556,7 @@ function nav(id,btn,navOpt){
     else if(id==='canvas')tTitle.textContent=PANEL_TITLES.canvas||'Canvas';
     else tTitle.textContent=PANEL_TITLES[id]||id;
   }
-  const fns={dashboard:()=>{try{const pendStaff=typeof currentUser!=='undefined'&&currentUser&&String(currentUser.user_metadata?.role_pending||'').toLowerCase()==='staff'&&FluxRole.current==='student'&&FluxRole.isPersonalMode();const eduDash=(typeof FluxRole!=='undefined'&&FluxRole.isEducator&&FluxRole.isEducator()&&FluxRole.isPersonalMode&&FluxRole.isPersonalMode())||pendStaff;if(eduDash){fluxApplyStudentDashboardChrome(false);if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffPersonalDashboard==='function'){FluxStaffPlatform.renderStaffPersonalDashboard();return;}}fluxApplyStudentDashboardChrome(true);}catch(e){}renderStats();renderTasks();renderCountdown();renderSmartSug();checkTimePoverty();renderWorkloadForecast();renderSubjectHealth();renderGapFiller();renderScheduleConflictNotices();if(window.FluxPersonal){FluxPersonal.applyDashboardOrder();if(FluxPersonal.applyDashboardVisibility)FluxPersonal.applyDashboardVisibility();}},calendar:()=>{if(window.FluxPersonal&&FluxPersonal.applyCalendarOrder)FluxPersonal.applyCalendarOrder();loadCalScheduleUI();renderCalendar();const gcalStatusEl=document.getElementById('gcalStatus');if(gcalStatusEl&&!gcalStatusEl.innerHTML)syncGoogleCalendar();},school:()=>renderSchool(),notes:()=>{ensureNbkSubtabs();renderNotesList();},notebook:()=>{ensureNbkSubtabs();try{const m=document.getElementById('notebookMount');if(m&&!m.dataset.fnbReady&&window.FluxNotebook&&FluxNotebook.open){FluxNotebook.open(m);m.dataset.fnbReady='1';}}catch(e){}},goals:()=>{renderExtrasList();renderSchoolsList();renderECGoals();initEcCollegeChatSelect();renderEcChatMessages();initEcCollegeChatListeners();},mood:()=>{renderMoodHistory();renderAffirmation();loadJournalLineUI();restoreTodayMood();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>{renderAISugs();initAIChats();try{if(window.FluxAIConnections&&typeof FluxAIConnections.renderConnectionsPanel==='function')FluxAIConnections.renderConnectionsPanel();}catch(e){}},settings:()=>{renderNoHWList();renderTabCustomizer();renderAboutStats();try{window.FluxChangelog?.render();}catch(e){}try{window.FluxPlatformUI?.renderSettings();}catch(e){}loadSettingsUI();try{fluxUpgradeSwatchA11y();}catch(e){}try{if(window.FluxParentPortal?.renderStudentSettings)FluxParentPortal.renderStudentSettings();}catch(e){}try{if(window.FluxLearnerProfile?.renderCard)FluxLearnerProfile.renderCard();}catch(e){}},canvas:()=>renderCanvasHubPanel(),toolbox:()=>{if(typeof window.renderToolbox==='function')window.renderToolbox();},flux_control:()=>{if(typeof renderFluxControlTab==='function')renderFluxControlTab();},teacherDashboard:()=>{try{renderTeacherDashboard();}catch(e){}},counselorDashboard:()=>{try{renderCounselorDashboard();}catch(e){}},counselorWorkspace:()=>{try{renderCounselorWorkspace();}catch(e){}},adminDashboard:()=>{try{renderAdminDashboard();}catch(e){}},lessonHub:()=>{try{renderLessonHub();}catch(e){}},teacherResources:()=>{try{if(typeof renderTeacherResources==='function')renderTeacherResources();}catch(e){}},counselorMeetings:()=>{try{renderCounselorMeetings();}catch(e){}},adminOps:()=>{try{renderAdminOps();}catch(e){}},staffWorkboard:()=>{try{renderStaffWorkboard();}catch(e){}},staffTasks:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffTasksPanel==='function')FluxStaffPlatform.renderStaffTasksPanel();}catch(e){}},staffMeetingNotes:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderMeetingNotesPanel==='function')FluxStaffPlatform.renderMeetingNotesPanel();}catch(e){}},staffPD:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderPDPanel==='function')FluxStaffPlatform.renderPDPanel();}catch(e){}},staffWellbeing:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderWellbeingPanel==='function')FluxStaffPlatform.renderWellbeingPanel();}catch(e){}},staffResources:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderResourcesPanel==='function')FluxStaffPlatform.renderResourcesPanel();}catch(e){}},staffPersonalHub:()=>{try{if(typeof renderStaffPersonalHub==='function')renderStaffPersonalHub();}catch(e){}},schoolFeedPanel:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderSchoolFeed==='function')FluxStaffPlatform.renderSchoolFeed();}catch(e){}},staffHub:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffWorkHub==='function')FluxStaffPlatform.renderStaffWorkHub();}catch(e){}},staffMessages:()=>{try{if(typeof renderStaffMessages==='function')renderStaffMessages();}catch(e){}},parentPortal:()=>{try{if(window.renderParentPortal)renderParentPortal();}catch(e){}}};
+  const fns={dashboard:()=>{try{const pendStaff=typeof currentUser!=='undefined'&&currentUser&&String(currentUser.user_metadata?.role_pending||'').toLowerCase()==='staff'&&FluxRole.current==='student'&&FluxRole.isPersonalMode();const eduDash=(typeof FluxRole!=='undefined'&&FluxRole.isEducator&&FluxRole.isEducator()&&FluxRole.isPersonalMode&&FluxRole.isPersonalMode())||pendStaff;if(eduDash){fluxApplyStudentDashboardChrome(false);if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffPersonalDashboard==='function'){FluxStaffPlatform.renderStaffPersonalDashboard();return;}}fluxApplyStudentDashboardChrome(true);}catch(e){}renderStats();renderTasks();renderCountdown();renderSmartSug();checkTimePoverty();renderWorkloadForecast();renderSubjectHealth();renderGapFiller();renderScheduleConflictNotices();if(window.FluxPersonal){FluxPersonal.applyDashboardOrder();if(FluxPersonal.applyDashboardVisibility)FluxPersonal.applyDashboardVisibility();}},calendar:()=>{if(window.FluxPersonal&&FluxPersonal.applyCalendarOrder)FluxPersonal.applyCalendarOrder();loadCalScheduleUI();renderCalendar();const gcalStatusEl=document.getElementById('gcalStatus');if(gcalStatusEl&&!gcalStatusEl.innerHTML)syncGoogleCalendar();},school:()=>renderSchool(),notes:()=>{ensureNbkSubtabs();renderNotesList();},notebook:()=>{ensureNbkSubtabs();try{const m=document.getElementById('notebookMount');if(m&&!m.dataset.fnbReady&&window.FluxNotebook&&FluxNotebook.open){FluxNotebook.open(m);m.dataset.fnbReady='1';}}catch(e){}},goals:()=>{renderExtrasList();renderSchoolsList();renderECGoals();initEcCollegeChatSelect();renderEcChatMessages();initEcCollegeChatListeners();try{window.FluxAcademicScores?.render();}catch(e){}},mood:()=>{renderMoodHistory();renderAffirmation();loadJournalLineUI();restoreTodayMood();},timer:()=>{updateTDisplay();renderTDots();updateTStats();renderSubjectBudget();renderFocusHeatmap();},profile:()=>renderProfile(),ai:()=>{renderAISugs();initAIChats();try{if(window.FluxAIConnections&&typeof FluxAIConnections.renderConnectionsPanel==='function')FluxAIConnections.renderConnectionsPanel();}catch(e){}},settings:()=>{renderNoHWList();renderTabCustomizer();renderAboutStats();try{window.FluxChangelog?.render();}catch(e){}try{window.FluxPlatformUI?.renderSettings();}catch(e){}loadSettingsUI();try{fluxUpgradeSwatchA11y();}catch(e){}try{if(window.FluxParentPortal?.renderStudentSettings)FluxParentPortal.renderStudentSettings();}catch(e){}try{if(window.FluxLearnerProfile?.renderCard)FluxLearnerProfile.renderCard();}catch(e){}},canvas:()=>renderCanvasHubPanel(),toolbox:()=>{if(typeof window.renderToolbox==='function')window.renderToolbox();},flux_control:()=>{if(typeof renderFluxControlTab==='function')renderFluxControlTab();},teacherDashboard:()=>{try{renderTeacherDashboard();}catch(e){}},counselorDashboard:()=>{try{renderCounselorDashboard();}catch(e){}},counselorWorkspace:()=>{try{renderCounselorWorkspace();}catch(e){}},adminDashboard:()=>{try{renderAdminDashboard();}catch(e){}},lessonHub:()=>{try{renderLessonHub();}catch(e){}},teacherResources:()=>{try{if(typeof renderTeacherResources==='function')renderTeacherResources();}catch(e){}},counselorMeetings:()=>{try{renderCounselorMeetings();}catch(e){}},adminOps:()=>{try{renderAdminOps();}catch(e){}},staffWorkboard:()=>{try{renderStaffWorkboard();}catch(e){}},staffTasks:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffTasksPanel==='function')FluxStaffPlatform.renderStaffTasksPanel();}catch(e){}},staffMeetingNotes:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderMeetingNotesPanel==='function')FluxStaffPlatform.renderMeetingNotesPanel();}catch(e){}},staffPD:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderPDPanel==='function')FluxStaffPlatform.renderPDPanel();}catch(e){}},staffWellbeing:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderWellbeingPanel==='function')FluxStaffPlatform.renderWellbeingPanel();}catch(e){}},staffResources:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderResourcesPanel==='function')FluxStaffPlatform.renderResourcesPanel();}catch(e){}},staffPersonalHub:()=>{try{if(typeof renderStaffPersonalHub==='function')renderStaffPersonalHub();}catch(e){}},schoolFeedPanel:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderSchoolFeed==='function')FluxStaffPlatform.renderSchoolFeed();}catch(e){}},staffHub:()=>{try{if(window.FluxStaffPlatform&&typeof FluxStaffPlatform.renderStaffWorkHub==='function')FluxStaffPlatform.renderStaffWorkHub();}catch(e){}},staffMessages:()=>{try{if(typeof renderStaffMessages==='function')renderStaffMessages();}catch(e){}},parentPortal:()=>{try{if(window.renderParentPortal)renderParentPortal();}catch(e){}}};
   fns[id]?.();
   if(id==='canvas'){
     try{
@@ -6062,13 +6062,55 @@ function renderExtrasList(){
 }
 
 // ══ TARGET SCHOOLS ══
+/* Where each application has got to. Four states, because that is the whole
+   arc a student lives through and anything finer is bookkeeping they will not
+   keep up to date. Stored as the key, rendered as the label, so renaming the
+   wording later does not orphan saved records. */
+const SCHOOL_STATUSES=[
+  ['notstarted','Not started','var(--muted2)'],
+  ['writing','Writing','var(--gold)'],
+  ['submitted','Submitted','var(--accent)'],
+  ['heard','Heard back','var(--green)'],
+];
+function schoolStatus(s){
+  const k=String(s&&s.status||'notstarted');
+  return SCHOOL_STATUSES.find(x=>x[0]===k)||SCHOOL_STATUSES[0];
+}
+function cycleSchoolStatus(id){
+  const s=ecSchools.find(x=>x.id===id); if(!s)return;
+  const i=SCHOOL_STATUSES.findIndex(x=>x[0]===schoolStatus(s)[0]);
+  s.status=SCHOOL_STATUSES[(i+1)%SCHOOL_STATUSES.length][0];
+  save('flux_ec_schools', ecSchools);
+  renderSchoolsList();
+}
+window.cycleSchoolStatus=cycleSchoolStatus;
+/* Days until a deadline, or null when there isn't one. Built from the ISO
+   parts rather than new Date(iso) — the string form is parsed as UTC and lands
+   a day early for anyone west of Greenwich, which on a college deadline is not
+   a rounding error. */
+function daysToDeadline(iso){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||'')); if(!m)return null;
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  const now=new Date(); now.setHours(0,0,0,0);
+  return Math.round((d-now)/86400000);
+}
+function deadlineLabel(iso){
+  const n=daysToDeadline(iso); if(n===null)return '';
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const when=MON[+m[2]-1]+' '+(+m[3])+(new Date().getFullYear()===+m[1]?'':' '+m[1]);
+  const rel=n===0?'today':n===1?'tomorrow':n>0?`in ${n} days`:n===-1?'yesterday':`${-n} days ago`;
+  return `${when} · ${rel}`;
+}
 function addSchool(){
   const name = document.getElementById('schoolName')?.value.trim();
   const tier = document.getElementById('schoolTier')?.value || 'target';
+  const deadline = document.getElementById('schoolDeadline')?.value || '';
   if(!name) return;
-  ecSchools.push({id: Date.now(), name, tier});
+  ecSchools.push({id: Date.now(), name, tier, deadline, status:'notstarted'});
   save('flux_ec_schools', ecSchools);
   document.getElementById('schoolName').value = '';
+  const dl=document.getElementById('schoolDeadline'); if(dl)dl.value='';
   renderSchoolsList();
 }
 function removeSchool(id){
@@ -6080,10 +6122,28 @@ function renderSchoolsList(){
   const el = document.getElementById('schoolsList'); if(!el) return;
   if(!ecSchools.length){ el.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:8px 0">No target schools yet.</div>'; return; }
   const tc = {reach:'var(--red)',target:'var(--gold)',safety:'var(--green)'};
-  el.innerHTML = ecSchools.map(s => {
+  /* Soonest deadline first, undated last. Sorted on a copy: ecSchools is the
+     stored array and re-ordering it here would rewrite the student's list on
+     every render for a display decision. */
+  const rows=[...ecSchools].sort((a,b)=>{
+    if(!a.deadline&&!b.deadline)return 0;
+    if(!a.deadline)return 1;
+    if(!b.deadline)return -1;
+    return a.deadline<b.deadline?-1:a.deadline>b.deadline?1:0;
+  });
+  el.innerHTML = rows.map(s => {
     const c = tc[s.tier] || 'var(--accent)';
+    const st = schoolStatus(s);
+    const n = daysToDeadline(s.deadline);
+    // Only the ones that are actually close go red; a submitted application
+    // is not urgent no matter what its deadline says.
+    const urgent = n !== null && n <= 14 && st[0] !== 'submitted' && st[0] !== 'heard';
+    const sub = s.deadline
+      ? `<div style="font-size:.68rem;color:${urgent?'var(--red)':'var(--muted)'};font-family:'JetBrains Mono',monospace;margin-top:2px">${esc(deadlineLabel(s.deadline))}</div>`
+      : '';
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
-      <div style="flex:1"><span style="font-size:.88rem;font-weight:600">${esc(s.name)}</span></div>
+      <div style="flex:1;min-width:0"><span style="font-size:.88rem;font-weight:600">${esc(s.name)}</span>${sub}</div>
+      <button type="button" onclick="cycleSchoolStatus(${s.id})" title="Click to move this application on" style="font-size:.6rem;font-weight:700;color:${st[2]};text-transform:uppercase;letter-spacing:.5px;background:${st[2]}18;padding:3px 9px;border-radius:10px;border:1px solid ${st[2]}33;cursor:pointer;box-shadow:none">${esc(st[1])}</button>
       <span style="font-size:.6rem;font-weight:700;color:${c};text-transform:uppercase;letter-spacing:.5px;background:${c}18;padding:2px 8px;border-radius:10px;border:1px solid ${c}33">${s.tier}</span>
       <button onclick="removeSchool(${s.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px">✕</button>
     </div>`;
@@ -6559,10 +6619,6 @@ function renderProfile(){
   const ps=document.getElementById('profileStats');
   const focusHrs=Math.round((load('t_minutes',0)||0)/60);
   if(ps)ps.innerHTML=[[focusHrs+'h','Focus','var(--accent)'],[done,'Done','var(--green)'],[tasks.filter(t=>!t.done).length,'Active','var(--gold)'],[notes.length,'Notes','var(--purple)']].map(([n,l,c])=>`<div style="background:var(--card2);border-radius:10px;padding:12px"><div style="font-size:1.4rem;font-weight:800;color:${c}">${n}</div><div style="font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:2px">${l}</div></div>`).join('');
-
-  // Before the confidence sliders, which return early when there are no
-  // classes yet — a student with an empty timetable still has test scores.
-  try{if(window.FluxAcademicScores?.render)FluxAcademicScores.render();}catch(_){}
 
   // Confidence sliders — now use dynamic subjects from user's classes
   const confEl=document.getElementById('confidenceSliders');
@@ -8600,7 +8656,7 @@ ${buildFullPlannerContextForAI({maxTotalChars:24000})}
 </full_planner_snapshot>
 
 <how_you_work>
-PLANNER DATA: The snapshot above includes tasks, notes, mood, timer sessions, classes, extracurriculars, and settings. Answer questions about any part of the planner from this data. The Extracurriculars tab (internal id: "goals") holds activities, target schools, and EC goals. Google Calendar events load live in the Calendar tab and may not fully appear in this snapshot.
+PLANNER DATA: The snapshot above includes tasks, notes, mood, timer sessions, classes, extracurriculars, and settings. Answer questions about any part of the planner from this data. The College Prep tab (internal id: "goals") holds activities, target schools with application deadlines, EC goals, and test scores (GPA, SAT, ACT, AP/IB). Google Calendar events load live in the Calendar tab and may not fully appear in this snapshot.
 
 CANVAS: If sections "Canvas — pinned in Flux" or "Canvas — synced assignments" appear, they are from the student's Canvas LMS (API + optional reader pin in the Canvas tab). Help them understand assignments, due dates, and instructions from that text. You cannot see their Canvas iframe if the school blocks embedding — rely on these sections.
 
@@ -9039,7 +9095,7 @@ function buildFullPlannerContextForAI(opts){
   add('Profile (JSON)',clip(JSON.stringify(p),1400));
 
   // Extracurriculars tab FIRST — otherwise long tasks/notes hit maxTotal and this block was cut off entirely.
-  add('Extracurriculars tab (sidebar: Extracurriculars / internal id goals)','This section is the Extracurriculars tab: activities, college list, and EC milestones.');
+  add('College Prep tab (sidebar: College Prep / internal id goals)','This section is the College Prep tab: activities, the college list with application deadlines, EC milestones, and test scores (GPA, SAT, ACT, AP/IB).');
   const exLines=extras.map(e=>{
     const ty=Array.isArray(e.types)?e.types.join(','):(e.type||'activity');
     return `- ${e.name} (${ty}) ${e.hours||0}h/wk ${plain(e.desc,220)}`;
@@ -9095,7 +9151,7 @@ function buildFullPlannerContextForAI(opts){
   add('Rest days (sick/lazy)',clip(JSON.stringify(loadRestDaysList()),800));
   add('App settings',clip(JSON.stringify(settings),1400));
 
-  add('Enabled app tabs (goals = Extracurriculars in UI)',tabConfig.filter(t=>t.visible).map(t=>t.id).join(', '));
+  add('Enabled app tabs (goals = College Prep in UI)',tabConfig.filter(t=>t.visible).map(t=>t.id).join(', '));
   add('Linked integrations',{canvas:!!(canvasToken&&canvasUrl),gmail:!!gmailToken});
 
   if(canvasToken&&canvasUrl){
@@ -11409,6 +11465,12 @@ function renderCmdResults(){
     ...(FLUX_NOTEBOOK_ENABLED?[{icon:'📝',label:'Notebook',_keys:['notes','knowledge'],action:()=>{nav('notes');closeCommandPalette();}}]:[]),
     {icon:'⏱',label:'Time',action:()=>{nav('timer');closeCommandPalette();}},
     {icon:'🎯',label:'Goals',action:()=>{nav('goals');closeCommandPalette();}},
+    /* Straight to the sub-tab. The scores card was on Profile, four cards
+       down, and the first thing said about it was "I couldn't find the SAT
+       ACT stuff anywhere" — so it gets its own way in by name. The section
+       button is found by its onclick rather than an id because these stabs
+       are hand-written markup with no ids. */
+    {icon:'📊',label:'Test scores · SAT, ACT, GPA',action:()=>{nav('goals');closeCommandPalette();setTimeout(()=>{const b=document.querySelector('#goals .stab[onclick*="scores"]');if(b)b.click();},60);}},
     {icon:'🔥',label:'Habits',action:()=>{nav('goals');closeCommandPalette();}},
     {icon:'😊',label:'Mood',action:()=>{nav('mood');closeCommandPalette();}},
     {icon:'🎓',label:'Canvas & Gmail',action:()=>{nav('canvas');closeCommandPalette();}},
@@ -14314,7 +14376,7 @@ function startOnboardingTour(){
     {nav:'timer',sel:'[data-tab="timer"]',title:'Time',body:'Pomodoro focus sessions with subject budgets and a weekly heatmap, plus a clock, stopwatch, countdown and alarms.'},
     {nav:'ai',sel:'[data-tab="ai"]',title:'Flux AI',body:'Ask anything about your planner — study help, scheduling, and workload. Full context from your snapshot.'},
     {nav:'dashboard',sel:'.view-btn[data-view="list"]',title:'Task views',body:'Switch List, Board, or Timeline on the dashboard to match how you like to work.'},
-    {nav:'goals',sel:'[data-tab="goals"]',title:'Extracurriculars',body:'Activities, college list, and milestones — IB/AP progress lives here too when relevant.'},
+    {nav:'goals',sel:'[data-tab="goals"]',title:'College Prep',body:'Activities, your college list with deadlines, and every test score — GPA, SAT, ACT and AP/IB results, with superscores worked out for you.'},
     {nav:'profile',sel:'[data-tab="profile"]',title:'Profile',body:'Academic snapshot, study DNA, and habits — keep it updated for better AI hints.'},
     {nav:'settings',sel:'[data-tab="settings"]',title:'Settings',body:'Look & theme, accent, sync, account, and replay this tour anytime under Data & info.'},
   ];

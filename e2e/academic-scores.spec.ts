@@ -11,8 +11,16 @@ import { gotoScenario } from './helpers';
  * neither of which is the best on both halves.
  */
 
-const openProfile = async (page: import('@playwright/test').Page) => {
-  await page.evaluate(() => (window as any).nav('profile'));
+/* The card lives on College Prep → Test scores. It began on the Profile tab,
+   four cards below the fold, and the first feedback on it was "I couldn't find
+   the SAT ACT stuff anywhere" — so where it opens is part of the feature and
+   is asserted rather than assumed. The sub-tab must be activated before
+   anything is measured: an inactive .spane has no layout, so clicks inside it
+   silently miss. */
+const openScores = async (page: import('@playwright/test').Page) => {
+  await page.evaluate(() => (window as any).nav('goals'));
+  await page.locator('#goals .stab[onclick*="scores"]').click();
+  await expect(page.locator('#ecpane-scores')).toHaveClass(/active/);
   await expect(page.locator('#academicScoresMount .fas-card')).toBeVisible();
 };
 
@@ -27,7 +35,7 @@ test.describe('GPA and test scores', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoScenario(page, 'student-semester');
-    await openProfile(page);
+    await openScores(page);
   });
 
   test('the superscore takes the best of each section, not the best total', async ({ page }) => {
@@ -74,7 +82,7 @@ test.describe('GPA and test scores', () => {
     // And it survives a reload, which is the whole point of storing it.
     await page.reload();
     await expect(page.locator('#app')).toHaveClass(/visible/);
-    await openProfile(page);
+    await openScores(page);
     const s = await page.evaluate(() => (window as any).FluxAcademicScores.summary());
     expect(s.satBest).toBe(1460);
   });
@@ -121,11 +129,171 @@ test.describe('GPA and test scores', () => {
     await page.click('[data-fas-act="save-gpa"]');
     expect(await page.evaluate(() => (window as any).load('profile', {}).gpa)).toBe('3.85');
 
+    // The name field is on the Profile tab, which is now a different tab from
+    // the scores card — that separation is exactly what makes the wipe easy to
+    // miss, so the test crosses it deliberately.
+    await page.evaluate(() => (window as any).nav('profile'));
     await page.fill('#name', 'Sam Rivera');
     await page.evaluate(() => (window as any).saveProfile());
     const after = await page.evaluate(() => (window as any).load('profile', {}));
     expect(after.name).toBe('Sam Rivera');
     expect(after.gpa, 'Save Profile deleted the GPA again').toBe('3.85');
+  });
+
+  test('AP and IB results are held to their own ceilings', async ({ page }) => {
+    await seed(page, {
+      exams: [
+        { id: 'e1', board: 'ib', name: 'History HL', score: 6, year: '2026' },
+        // 6 is a fine IB score and an impossible AP one. Storing a bare number
+        // and guessing the board later is how an IB 6 becomes an invalid AP 6.
+        { id: 'e2', board: 'ap', name: 'Calculus BC', score: 6, year: '2026' },
+        { id: 'e3', board: 'ap', name: '', score: 5, year: '2026' },   // no subject
+      ],
+    });
+    const s = await page.evaluate(() => (window as any).FluxAcademicScores.summary());
+    expect(s.exams.length, 'the unnamed result was kept').toBe(2);
+    expect(s.exams.find((e: any) => e.board === 'ib').score).toBe(6);
+    expect(s.exams.find((e: any) => e.board === 'ap').score, 'an AP 6 was stored').toBe(5);
+  });
+
+  test('a passing exam score reads differently from a failing one', async ({ page }) => {
+    /* The pass mark is not the same number on the two boards — 3 on an AP, 4
+       on an IB subject — so a single threshold would mark an IB 3 as a pass.
+       Colour only; the score and the "out of 5" already say it in text. */
+    await seed(page, {
+      exams: [
+        { id: 'e1', board: 'ap', name: 'Calculus BC', score: 5, year: '2026' },
+        { id: 'e2', board: 'ib', name: 'History HL', score: 3, year: '2026' },
+        { id: 'e3', board: 'ap', name: 'US History', score: 2, year: '2025' },
+      ],
+    });
+    // The exam list is the last .fas-list in the card — SAT and ACT come first.
+    const colours = await page.evaluate(() => {
+      const lists = [...document.querySelectorAll('#academicScoresMount .fas-list')];
+      const exams = lists[lists.length - 1] as HTMLElement;
+      return [...exams.querySelectorAll('.fas-row-score')].map((e) => ({
+        n: e.textContent,
+        good: e.classList.contains('is-good'),
+        colour: getComputedStyle(e).color,
+      }));
+    });
+
+    const ap5 = colours.find((c) => c.n === '5')!;
+    const ib3 = colours.find((c) => c.n === '3')!;
+    const ap2 = colours.find((c) => c.n === '2')!;
+    expect(ap5.good, 'an AP 5 was not marked as a pass').toBe(true);
+    expect(ib3.good, 'an IB 3 was marked as a pass — that is the AP threshold').toBe(false);
+    expect(ap2.good).toBe(false);
+    expect(ap5.colour, 'the pass mark is not actually visible').not.toBe(ap2.colour);
+  });
+
+  test('an exam result typed into the form is saved', async ({ page }) => {
+    await page.selectOption('#fasExamBoard', 'ib');
+    await page.fill('#fasExamName', 'Physics HL');
+    await page.fill('#fasExamScore', '7');
+    await page.fill('#fasExamYear', '2026');
+    await page.click('[data-fas-act="add-exam"]');
+
+    const s = await page.evaluate(() => (window as any).FluxAcademicScores.summary());
+    expect(s.exams[0]).toMatchObject({ board: 'ib', name: 'Physics HL', score: 7, year: '2026' });
+    await expect(page.locator('.fas-list').last()).toContainText('Physics HL');
+  });
+});
+
+/*
+ * The college list gained an application deadline and a status.
+ *
+ * Everything here goes through the real form rather than pushing objects into
+ * `ecSchools`: that binding is a module-scoped `let` inside the bundle, not a
+ * window global, so a test that assigns to it would be writing to nothing and
+ * passing on the render it triggered by hand. Selectors are scoped to
+ * #ecpane-colleges for the same class of reason — "+ Add" matches buttons in
+ * several other panels, and Playwright would happily click one of those.
+ */
+test.describe('College Prep: the college list', () => {
+  const PANE = '#ecpane-colleges';
+
+  async function addSchool(page: import('@playwright/test').Page,
+    name: string, tier: string, deadline?: string) {
+    await page.fill(`${PANE} #schoolName`, name);
+    await page.selectOption(`${PANE} #schoolTier`, tier);
+    if (deadline) await page.fill(`${PANE} #schoolDeadline`, deadline);
+    await page.locator(`${PANE} button:has-text("+ Add")`).click();
+    await expect(page.locator(`${PANE} #schoolsList`)).toContainText(name);
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoScenario(page, 'student-semester');
+    await page.evaluate(() => (window as any).nav('goals'));
+    await page.locator('#goals .stab[onclick*="colleges"]').click();
+    await expect(page.locator(PANE)).toHaveClass(/active/);
+  });
+
+  test('schools sort by deadline, and undated ones sink', async ({ page }) => {
+    // Added out of order on purpose — insertion order must not survive.
+    await addSchool(page, 'Later School', 'target', '2027-03-01');
+    await addSchool(page, 'No Deadline', 'safety');
+    await addSchool(page, 'Sooner School', 'reach', '2027-01-05');
+
+    const rows = await page.locator(`${PANE} #schoolsList > div`).allInnerTexts();
+    const idx = (n: string) => rows.findIndex((r) => r.includes(n));
+    expect(idx('Sooner School')).toBeLessThan(idx('Later School'));
+    expect(idx('No Deadline'), 'a school with no deadline jumped the queue')
+      .toBeGreaterThan(idx('Later School'));
+  });
+
+  test('the status chip walks the application forward and is stored', async ({ page }) => {
+    await addSchool(page, 'Purdue', 'target', '2027-01-05');
+
+    const chip = page.locator(`${PANE} #schoolsList button[onclick*="cycleSchoolStatus"]`).first();
+    await expect(chip).toHaveText('Not started');
+    await chip.click();
+    await expect(chip).toHaveText('Writing');
+    await chip.click();
+    await expect(chip).toHaveText('Submitted');
+
+    const stored = await page.evaluate(() =>
+      ((window as any).load('flux_ec_schools', []) as any[]).find((s) => s.name === 'Purdue'));
+    expect(stored.status, 'the status was on screen but never saved').toBe('submitted');
+  });
+
+  test('a school added without a deadline still works', async ({ page }) => {
+    // The deadline field is optional; requiring it would put a question between
+    // the student and writing down a school they just thought of.
+    await addSchool(page, 'Michigan', 'reach');
+    const stored = await page.evaluate(() =>
+      ((window as any).load('flux_ec_schools', []) as any[]).find((s) => s.name === 'Michigan'));
+    expect(stored.deadline).toBe('');
+    expect(stored.status).toBe('notstarted');
+  });
+
+  test('a deadline inside two weeks is called out, a submitted one is not', async ({ page }) => {
+    /* Computed in the page, not in Node. The scenario can pin the browser's
+       clock, and daysToDeadline() measures against that — a date built here
+       would be "in 5 days" by the runner's watch and months away by the app's.
+       Local parts, not toISOString(), which is UTC and slips a day west of
+       Greenwich. */
+    const soon = await page.evaluate(() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 5);
+      const p = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    });
+    await addSchool(page, 'Deadline Soon', 'reach', soon);
+
+    const row = page.locator(`${PANE} #schoolsList > div`).filter({ hasText: 'Deadline Soon' });
+    await expect(row).toContainText('in 5 days');
+    const urgentColour = await row.locator('div[style*="color"]').last()
+      .evaluate((e) => getComputedStyle(e).color);
+
+    // Once it is submitted the date is history, not pressure.
+    await row.locator('button[onclick*="cycleSchoolStatus"]').click();
+    await row.locator('button[onclick*="cycleSchoolStatus"]').click();
+    await expect(row.locator('button[onclick*="cycleSchoolStatus"]')).toHaveText('Submitted');
+    const calmColour = await row.locator('div[style*="color"]').last()
+      .evaluate((e) => getComputedStyle(e).color);
+    expect(calmColour, 'a submitted application is still being shown as urgent').not.toBe(urgentColour);
   });
 
   test('the entry fields sit in a row instead of stacking', async ({ page }) => {

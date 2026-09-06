@@ -72,6 +72,14 @@
     return String(Math.min(n, max).toFixed(2)).replace(/\.?0+$/, '') || '0';
   }
 
+  /* AP runs 1–5, IB subjects run 1–7. Two different ceilings, so the board has
+     to be known before the score can be judged — storing a bare "6" and
+     guessing later would silently turn an IB 6 into an invalid AP score. */
+  var BOARDS = { ap: { label: 'AP', max: 5, good: 3 }, ib: { label: 'IB', max: 7, good: 4 } };
+  function boardOf(v) { return BOARDS[String(v)] ? String(v) : 'ap'; }
+  function examScore(v, board) { return clampInt(v, 1, BOARDS[boardOf(board)].max); }
+  function yearOrBlank(v) { var n = clampInt(v, 1990, 2100); return n == null ? '' : String(n); }
+
   function satTotalOrBlank(v) { var n = clampInt(v, 400, 1600); return n == null ? '' : Math.round(n / 10) * 10; }
   function isoOrBlank(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) ? String(s) : ''; }
   function rid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -98,6 +106,12 @@
           english: actSection(s && s.english), math: actSection(s && s.math),
           reading: actSection(s && s.reading), science: actSection(s && s.science) };
       }).filter(function (s) { return actParts(s).length > 0; }).slice(0, 30),
+      exams: (Array.isArray(d.exams) ? d.exams : []).map(function (e) {
+        var board = boardOf(e && e.board);
+        return { id: String((e && e.id) || rid()), board: board,
+          name: String((e && e.name) || '').slice(0, 60),
+          score: examScore(e && e.score, board), year: yearOrBlank(e && e.year) };
+      }).filter(function (e) { return e.name && e.score != null; }).slice(0, 60),
     };
   }
 
@@ -233,6 +247,20 @@
       + ' aria-label="Remove the ACT from ' + esc(fmtDate(s.date)) + '">✕</button></li>';
   }
 
+  function examRow(e) {
+    var b = BOARDS[e.board];
+    // Green from the score a college will actually give credit for: 3 on an
+    // AP, 4 on an IB subject. Below that it is still worth recording.
+    var good = e.score >= b.good;
+    return '<li class="fas-row">'
+      + '<div class="fas-row-main"><span class="fas-row-score' + (good ? ' is-good' : '') + '">' + esc(e.score) + '</span>'
+      + '<span class="fas-row-date">' + esc(e.name) + '</span></div>'
+      + '<div class="fas-row-sub">' + esc(b.label) + ' · out of ' + b.max
+      + (e.year ? ' · ' + esc(e.year) : '') + '</div>'
+      + '<button type="button" class="fas-del" data-fas-del="exams" data-fas-id="' + esc(e.id) + '"'
+      + ' aria-label="Remove ' + esc(e.name) + '">✕</button></li>';
+  }
+
   function num(id, label, min, max, step, value, ph) {
     return '<label class="fas-field"><span>' + esc(label) + '</span>'
       + '<input type="number" id="' + esc(id) + '" min="' + min + '" max="' + max + '" step="' + step + '"'
@@ -327,6 +355,26 @@
       + '<button type="button" class="fas-btn" data-fas-act="add-act">Add ACT sitting</button>'
       + '</div>'
 
+      /* AP / IB exam results */
+      + '<div class="fas-sec">'
+      + '<div class="fas-sec-head"><span class="fas-sec-t">AP &amp; IB exams</span>'
+      + '<span class="fas-sec-n">' + state.exams.length + (state.exams.length === 1 ? ' result' : ' results') + '</span></div>'
+      + (state.exams.length ? '<ul class="fas-list">' + state.exams.map(examRow).join('') + '</ul>'
+        : '<p class="fas-empty">No exam results yet. Applications ask for these separately from the SAT and ACT, so they are worth keeping here as they come in.</p>')
+      + '<div class="fas-grid fas-grid--4">'
+      + '<label class="fas-field"><span>Board</span><select id="fasExamBoard">'
+      + '<option value="ap">AP (out of 5)</option><option value="ib">IB (out of 7)</option>'
+      + '</select></label>'
+      // One column, not two: spanning the subject field pushed Year onto a row
+      // of its own with three empty cells beside it. At the card's real width
+      // a quarter is ~220px, which holds "Environmental Science" comfortably.
+      + '<label class="fas-field"><span>Subject</span><input type="text" id="fasExamName" maxlength="60" placeholder="Calculus BC"></label>'
+      + num('fasExamScore', 'Score', 1, 7, 1, '', '5')
+      + num('fasExamYear', 'Year', 1990, 2100, 1, '', String(new Date().getFullYear()))
+      + '</div>'
+      + '<button type="button" class="fas-btn" data-fas-act="add-exam">Add exam result</button>'
+      + '</div>'
+
       + (cross ? '<p class="fas-cross">' + esc(cross)
         + ' <span class="fas-cross-src">Official 2018 SAT/ACT concordance — a guide, not a conversion.</span></p>' : '')
       + '</div>';
@@ -392,6 +440,22 @@
       state.act.unshift(s);
       sortByDate(state.act);
       persist(); render(); toast('ACT sitting added');
+      return;
+    }
+
+    if (act === 'add-exam') {
+      var board = boardOf(val('fasExamBoard'));
+      var name = String(val('fasExamName') || '').trim().slice(0, 60);
+      var score = examScore(val('fasExamScore'), board);
+      if (!name) { toast('Name the subject first', 'error'); return; }
+      if (score == null) { toast('Score must be 1–' + BOARDS[board].max + ' for ' + BOARDS[board].label, 'error'); return; }
+      state.exams.unshift({ id: rid(), board: board, name: name, score: score, year: yearOrBlank(val('fasExamYear')) });
+      // Newest year first, then by score, so the strongest results lead.
+      state.exams.sort(function (a, b) {
+        if (a.year !== b.year) return (b.year || '') > (a.year || '') ? 1 : -1;
+        return b.score - a.score;
+      });
+      persist(); render(); toast('Exam result added');
     }
   }
 
@@ -420,6 +484,7 @@
        should not lose them to a device that has never opened this card. */
     if (!incoming.sat.length && mine.sat.length) incoming.sat = mine.sat;
     if (!incoming.act.length && mine.act.length) incoming.act = mine.act;
+    if (!incoming.exams.length && mine.exams.length) incoming.exams = mine.exams;
     if (!incoming.gpa.unweighted && mine.gpa.unweighted) incoming.gpa = mine.gpa;
     state = incoming;
     writeRaw(state);
@@ -435,7 +500,7 @@
     summary: function () {
       var ss = satSuper(), as = actSuper();
       return { gpa: state.gpa, satSuperscore: ss, satBest: bestSatSitting(),
-        actSuperscore: as, actBest: bestActSitting(),
+        actSuperscore: as, actBest: bestActSitting(), exams: state.exams,
         satAsAct: satToAct(ss != null ? ss : bestSatSitting()),
         actAsSat: actToSat(as != null ? as : bestActSitting()) };
     },

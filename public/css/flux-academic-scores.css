@@ -59,6 +59,11 @@
   font-size: 1.05rem; font-weight: 800; color: var(--text, #fff);
   font-family: 'JetBrains Mono', monospace;
 }
+/* An AP 3 or an IB 4 is the line most colleges give credit at, so a result
+   that clears it is worth seeing at a glance. Colour only — the score and the
+   "out of 5" beneath it already say so in text, and the two thresholds differ
+   by board, which no single visual rule could carry on its own. */
+.fas-row-score.is-good { color: var(--green, #34d399); }
 .fas-row-date { font-size: .72rem; color: var(--muted2, #9aa3b2); }
 .fas-row-sub { font-size: .7rem; color: var(--muted, #6b7280); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
 .fas-del {
@@ -88,6 +93,10 @@
 .fas-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .fas-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* A subject name needs room that a two-digit score does not. */
+.fas-field--wide { grid-column: span 2; }
+/* A subject name needs room that a two-digit score does not. */
+.fas-field--wide { grid-column: span 2; }
 .fas-field > span { font-size: .68rem; font-weight: 700; color: var(--muted, #6b7280); }
 #app .fas-card .fas-field input,
 #app .fas-card .fas-field select {
