@@ -9286,6 +9286,58 @@ function getCloudPayload(){
     }:{}),
   };
 }
+/* ── Comparing a row against one we sent ──────────────────────────────────
+   Key order is not information, but JSON.stringify treats it as though it
+   were. The `data` column is jsonb, and Postgres stores a jsonb object in its
+   own key order rather than ours, so the row that comes back from a pull is
+   never byte-identical to the payload we pushed — even when literally nothing
+   about it has changed.
+
+   Sorting keys before comparing is what lets syncToCloud stamp a fingerprint
+   that the next syncFromCloud can actually match. Without it the stamp would
+   never match and the echo it exists to stop would go unfixed. */
+function fluxCanonicalJson(v){
+  if(v===null||typeof v!=='object')return JSON.stringify(v);
+  if(Array.isArray(v))return '['+v.map(x=>{
+    const s=fluxCanonicalJson(x);
+    return s===undefined?'null':s;   // as JSON.stringify does inside arrays
+  }).join(',')+']';
+  const parts=[];
+  for(const k of Object.keys(v).sort()){
+    const s=fluxCanonicalJson(v[k]);
+    if(s===undefined)continue;       // and as it does for object members
+    parts.push(JSON.stringify(k)+':'+s);
+  }
+  return '{'+parts.join(',')+'}';
+}
+
+/* When the last keystroke landed. A pull that arrives mid-word rebuilds the
+   panel from an HTML string and takes the half-typed value with it, so the
+   guard below waits rather than doing that. Capture phase, because plenty of
+   handlers in here stop propagation. */
+let _fluxLastTypedAt=0;
+try{
+  document.addEventListener('input',()=>{_fluxLastTypedAt=Date.now();},true);
+  document.addEventListener('keydown',()=>{_fluxLastTypedAt=Date.now();},true);
+}catch(_){}
+
+/** Grace period after a keystroke during which an incoming row waits its turn. */
+const FLUX_TYPING_GRACE_MS=8000;
+
+/** Is the student part way through typing something a redraw would destroy? */
+function fluxIsTyping(){
+  const a=document.activeElement;
+  if(!a||a===document.body)return false;
+  const tag=a.tagName;
+  const editable=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||a.isContentEditable;
+  if(!editable)return false;
+  // Focus alone is not enough: a panel that autofocuses its search box would
+  // stall incoming sync for as long as it stayed open. It has to be focus
+  // *and* a recent keystroke, which bounds the wait to a few seconds after
+  // they stop typing.
+  return Date.now()-_fluxLastTypedAt<FLUX_TYPING_GRACE_MS;
+}
+
 /** Push interval while signed in (backup if syncKey debounce missed a path). */
 const FLUX_SYNC_PUSH_INTERVAL_MS=2500;
 /** Pull interval when tab is visible (cross-device; lighter than push). */
@@ -9417,6 +9469,21 @@ async function syncToCloud(){
     if(typeof updateConnectivityBanner==='function')updateConnectivityBanner();
     setSyncStatus('synced');
     save('flux_last_sync',Date.now());
+    /* ── Don't let our own edit come back and repaint the app ──────────────
+       The push runs every 2.5s and the pull every 8s, and until now only the
+       pull ever stamped the fingerprint. So editing anything started a loop
+       against ourselves: type a character, push it, and eight seconds later
+       pull that same character back as a row that no longer matched the last
+       stamp — which ran ~40 applyFromCloud() calls, thirteen renders and
+       populateSubjectSelects(), throwing away whatever was half-typed. Keep
+       typing and it happened every eight seconds, for as long as you typed.
+       Reported as the test score fields clearing themselves.
+
+       The upsert above succeeded, so the row now holds exactly this payload.
+       Recording that here means the next pull recognises its own handiwork
+       and does nothing. A row that differs — a genuine change from another
+       device — still fails the comparison and is applied as before. */
+    try{window._fluxLastCloudFingerprint=fluxCanonicalJson(payload);}catch(_){}
     console.log('✓ Synced to cloud at',new Date().toLocaleTimeString());
   }catch(e){
     console.error('Sync error:',e);
@@ -9567,12 +9634,22 @@ async function syncFromCloud(){
        what was last applied turns those into nothing at all. A pull that
        genuinely brings new data still applies it, exactly as before. */
     let _cloudFp='';
-    try{_cloudFp=JSON.stringify(d);}catch(_){_cloudFp='';}
+    try{_cloudFp=fluxCanonicalJson(d);}catch(_){_cloudFp='';}
     if(_cloudFp&&_cloudFp===window._fluxLastCloudFingerprint){
       setSyncStatus('synced');
       window._fluxSyncFailed=false;
       if(typeof updateConnectivityBanner==='function')updateConnectivityBanner();
       return;   // the finally block still clears the in-flight flag
+    }
+    /* Something did change — but a redraw right now would still eat the word
+       being typed. Leave the fingerprint unstamped and let the next pull, a
+       few seconds after they stop, apply it. Nothing is lost by waiting; the
+       row is not going anywhere. */
+    if(fluxIsTyping()){
+      setSyncStatus('synced');
+      window._fluxSyncFailed=false;
+      if(typeof updateConnectivityBanner==='function')updateConnectivityBanner();
+      return;
     }
     if(window.FluxOfflineSync?.enabled?.()&&FluxOfflineSync.applyCloudPayload){
       try{FluxOfflineSync.applyCloudPayload(d);}catch(e){console.warn('[FluxOfflineSync]',e);}
